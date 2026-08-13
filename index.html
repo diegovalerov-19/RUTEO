@@ -10,11 +10,12 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
   <main class="app-shell">
     <aside class="panel">
+      <div class="panel-content">
       <header class="brand">
         <div class="app-identity">
           <div>
@@ -78,6 +79,17 @@
             <button class="icon-button" type="button" data-search="end" aria-label="Buscar punto final">⌕</button>
           </div>
 
+          <section class="waypoints-builder" aria-labelledby="waypoints-title">
+            <div class="waypoints-heading">
+              <div>
+                <h3 id="waypoints-title">Puntos obligatorios</h3>
+                <p>La ruta pasará por estos puntos en el orden en que los agregues.</p>
+              </div>
+              <button id="add-waypoint" type="button">+ Agregar</button>
+            </div>
+            <div id="waypoints-list" class="waypoints-list"></div>
+          </section>
+
           <div class="two-columns">
             <div>
               <label for="date">Día del ruteo</label>
@@ -89,7 +101,7 @@
             </div>
           </div>
 
-          <p class="help">También puedes tocar el mapa: primero el origen y luego el destino.</p>
+          <p class="help">Toca el mapa para marcar origen y destino. Para un punto obligatorio, pulsa su botón ◎ y después toca el mapa.</p>
           <p id="message" class="message" role="status" aria-live="polite"></p>
           <button id="calculate" class="primary-button" type="submit">Calcular y guardar ruta</button>
           <button id="reset" class="secondary-button" type="button">Limpiar puntos</button>
@@ -108,6 +120,7 @@
         </div>
         <div id="history" class="history"></div>
       </section>
+      </div>
 
       <footer class="app-credits" aria-label="Créditos de desarrollo">
         <span>CRÉDITOS</span>
@@ -118,7 +131,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=12" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=13" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -179,8 +192,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=12"></script>
-  <script src="route-export.js?v=12"></script>
-  <script src="app.js?v=12"></script>
+  <script src="map-engine.js?v=13"></script>
+  <script src="route-export.js?v=13"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
