@@ -3,6 +3,9 @@ const STORAGE_KEY = "ruteo-routes-v2";
 const ACTIVE_TRACK_KEY = "ruteo-active-track-v2";
 const MIN_POINT_DISTANCE_METERS = 5;
 const MAX_ACCEPTED_ACCURACY_METERS = 60;
+const SIMULATION_MIN_DURATION_MS = 12000;
+const SIMULATION_MAX_DURATION_MS = 90000;
+const SIMULATION_COMPRESSION = 20;
 
 const map = L.map("map", { zoomControl: false }).setView(DEFAULT_CENTER, 12);
 L.control.zoom({ position: "topright" }).addTo(map);
@@ -34,7 +37,8 @@ const state = {
   captureStartMarker: null,
   captureEndMarker: null,
   timerId: null,
-  followLocation: true
+  followLocation: true,
+  simulation: null
 };
 
 const $ = selector => document.querySelector(selector);
@@ -58,6 +62,7 @@ function setMode(mode) {
     showMapBanner("Finaliza o pausa el recorrido antes de cambiar de modo.", "warning");
     return;
   }
+  if (mode !== "capture") closeSimulation();
   state.mode = mode;
   document.querySelectorAll(".mode-tab").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
   $("#capture-mode").hidden = mode !== "capture";
@@ -115,6 +120,7 @@ async function startCapture() {
   }
 
   stopWatchingPosition();
+  closeSimulation();
 
   if (!state.track || state.track.status === "finished") {
     clearCaptureLayers();
@@ -436,9 +442,216 @@ function saveRoute(route) {
   renderHistory();
 }
 
+function vehicleIcon() {
+  return L.divIcon({
+    className: "vehicle-icon-shell",
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    html: `<div class="vehicle-marker" aria-label="Vehículo de la simulación">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="13" y="5" width="22" height="38" rx="8" fill="#e30613" stroke="#fff" stroke-width="2"/>
+        <path d="M17 16h14l-2-7H19z" fill="#202020"/>
+        <path d="M17 29h14v7H17z" fill="#fff" opacity=".92"/>
+        <rect x="9" y="13" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="34" y="13" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="9" y="29" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="34" y="29" width="5" height="10" rx="2" fill="#111"/>
+      </svg>
+    </div>`
+  });
+}
+
+function startRouteSimulation(id) {
+  if (state.track?.status === "recording") {
+    showMapBanner("Finaliza o pausa la captura actual antes de iniciar una simulación.", "warning");
+    return;
+  }
+
+  const route = getRoutes().find(item => item.id === id && item.type === "recorded");
+  const points = route?.points?.filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lng)) || [];
+  if (!route || points.length < 2) {
+    showMapBanner("Este recorrido no contiene suficientes puntos GPS para simularlo.", "warning");
+    return;
+  }
+
+  closeSimulation();
+  setMode("capture");
+  clearCaptureLayers();
+  state.track = route;
+
+  const latlngs = points.map(point => L.latLng(point.lat, point.lng));
+  const cumulativeDistances = [0];
+  for (let index = 1; index < latlngs.length; index += 1) {
+    cumulativeDistances.push(cumulativeDistances[index - 1] + latlngs[index - 1].distanceTo(latlngs[index]));
+  }
+
+  const originalDurationMs = Math.max(1000, getElapsedMilliseconds(route));
+  const animationDurationMs = Math.min(
+    SIMULATION_MAX_DURATION_MS,
+    Math.max(SIMULATION_MIN_DURATION_MS, originalDurationMs / SIMULATION_COMPRESSION)
+  );
+  const pendingLine = L.polyline(latlngs, { color: "#777777", weight: 6, opacity: 0.48, dashArray: "8 8" }).addTo(map);
+  const completedLine = L.polyline([latlngs[0]], { color: "#e30613", weight: 7, opacity: 0.98 }).addTo(map);
+  const marker = L.marker(latlngs[0], { icon: vehicleIcon(), keyboard: false, zIndexOffset: 1000 }).addTo(map);
+
+  state.simulation = {
+    route,
+    points,
+    latlngs,
+    cumulativeDistances,
+    geometryDistance: cumulativeDistances.at(-1),
+    originalDurationMs,
+    animationDurationMs,
+    elapsedAnimationMs: 0,
+    speed: Number($("#simulation-speed").value) || 1,
+    playing: true,
+    lastFrameTime: null,
+    lastPanTime: 0,
+    frameId: null,
+    pendingLine,
+    completedLine,
+    marker
+  };
+
+  $("#simulation-title").textContent = route.name;
+  $("#simulation-panel").hidden = false;
+  $("#simulation-toggle").textContent = "❚❚ Pausar";
+  $("#simulation-progress").value = "0";
+  $("#simulation-speed").value = "1";
+  state.simulation.speed = 1;
+  setGpsStatus("Simulando recorrido", route.name, "good");
+  map.fitBounds(pendingLine.getBounds(), { padding: [55, 55] });
+  renderSimulation(0, false);
+  state.simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function simulationFrame(timestamp) {
+  const simulation = state.simulation;
+  if (!simulation?.playing) return;
+  if (simulation.lastFrameTime === null) simulation.lastFrameTime = timestamp;
+  const delta = timestamp - simulation.lastFrameTime;
+  simulation.lastFrameTime = timestamp;
+  simulation.elapsedAnimationMs = Math.min(
+    simulation.animationDurationMs,
+    simulation.elapsedAnimationMs + delta * simulation.speed
+  );
+  const fraction = simulation.elapsedAnimationMs / simulation.animationDurationMs;
+  renderSimulation(fraction, timestamp - simulation.lastPanTime > 450);
+  if (timestamp - simulation.lastPanTime > 450) simulation.lastPanTime = timestamp;
+
+  if (fraction >= 1) {
+    simulation.playing = false;
+    simulation.lastFrameTime = null;
+    $("#simulation-toggle").textContent = "▶ Repetir";
+    setGpsStatus("Simulación finalizada", simulation.route.name, "good");
+    return;
+  }
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function renderSimulation(fraction, followVehicle = true) {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  const safeFraction = Math.min(1, Math.max(0, fraction));
+  let segmentIndex = 0;
+  let segmentFraction = 0;
+
+  if (simulation.geometryDistance > 0) {
+    const targetDistance = simulation.geometryDistance * safeFraction;
+    while (
+      segmentIndex < simulation.cumulativeDistances.length - 2 &&
+      simulation.cumulativeDistances[segmentIndex + 1] < targetDistance
+    ) segmentIndex += 1;
+    const segmentStart = simulation.cumulativeDistances[segmentIndex];
+    const segmentLength = simulation.cumulativeDistances[segmentIndex + 1] - segmentStart;
+    segmentFraction = segmentLength ? (targetDistance - segmentStart) / segmentLength : 0;
+  } else {
+    const scaledIndex = safeFraction * (simulation.latlngs.length - 1);
+    segmentIndex = Math.min(simulation.latlngs.length - 2, Math.floor(scaledIndex));
+    segmentFraction = scaledIndex - segmentIndex;
+  }
+
+  const from = simulation.latlngs[segmentIndex];
+  const to = simulation.latlngs[segmentIndex + 1];
+  const current = L.latLng(
+    from.lat + (to.lat - from.lat) * segmentFraction,
+    from.lng + (to.lng - from.lng) * segmentFraction
+  );
+  const completedPoints = simulation.latlngs.slice(0, segmentIndex + 1).concat(current);
+  const pendingPoints = [current].concat(simulation.latlngs.slice(segmentIndex + 1));
+  simulation.completedLine.setLatLngs(completedPoints);
+  simulation.pendingLine.setLatLngs(pendingPoints);
+  simulation.marker.setLatLng(current);
+
+  const vehicle = simulation.marker.getElement()?.querySelector(".vehicle-marker");
+  if (vehicle) vehicle.style.setProperty("--vehicle-rotation", `${bearingBetween(from, to)}deg`);
+  if (followVehicle) map.panTo(current, { animate: true, duration: 0.35 });
+
+  const simulatedDuration = simulation.originalDurationMs * safeFraction;
+  const routeDistance = simulation.route.distanceMeters || simulation.geometryDistance;
+  $("#simulation-progress").value = String(Math.round(safeFraction * 1000));
+  $("#simulation-time").textContent = `${formatDuration(simulatedDuration)} / ${formatDuration(simulation.originalDurationMs)}`;
+  $("#simulation-distance").textContent = `${formatDistance(routeDistance * safeFraction)} / ${formatDistance(routeDistance)}`;
+}
+
+function bearingBetween(from, to) {
+  const startLat = from.lat * Math.PI / 180;
+  const endLat = to.lat * Math.PI / 180;
+  const longitudeDelta = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(longitudeDelta) * Math.cos(endLat);
+  const x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(longitudeDelta);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function toggleSimulation() {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  if (simulation.playing) {
+    simulation.playing = false;
+    simulation.lastFrameTime = null;
+    cancelAnimationFrame(simulation.frameId);
+    $("#simulation-toggle").textContent = "▶ Continuar";
+    return;
+  }
+  if (simulation.elapsedAnimationMs >= simulation.animationDurationMs) {
+    simulation.elapsedAnimationMs = 0;
+    renderSimulation(0, true);
+  }
+  simulation.playing = true;
+  simulation.lastFrameTime = null;
+  $("#simulation-toggle").textContent = "❚❚ Pausar";
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function restartSimulation() {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  cancelAnimationFrame(simulation.frameId);
+  simulation.elapsedAnimationMs = 0;
+  simulation.lastFrameTime = null;
+  simulation.playing = true;
+  renderSimulation(0, true);
+  $("#simulation-toggle").textContent = "❚❚ Pausar";
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function closeSimulation() {
+  const simulation = state.simulation;
+  if (simulation) {
+    cancelAnimationFrame(simulation.frameId);
+    [simulation.pendingLine, simulation.completedLine, simulation.marker].forEach(layer => {
+      if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+    });
+  }
+  state.simulation = null;
+  const panel = $("#simulation-panel");
+  if (panel) panel.hidden = true;
+}
+
 function showRecordedRoute(id) {
   const route = getRoutes().find(item => item.id === id && item.type === "recorded");
   if (!route) return;
+  closeSimulation();
   setMode("capture");
   clearCaptureLayers();
   state.track = route;
@@ -453,6 +666,7 @@ function showRecordedRoute(id) {
 }
 
 function deleteRoute(id) {
+  if (state.simulation?.route.id === id) closeSimulation();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
   renderHistory();
 }
@@ -465,7 +679,7 @@ function renderHistory() {
         <div class="history-heading"><span class="kind">GPS</span><strong>${escapeHtml(route.name)}</strong></div>
         <p class="when">${formatDateTime(route.startedAt)}</p>
         <p>${formatDistance(route.distanceMeters)} · ${formatDuration(getElapsedMilliseconds(route))} · ${route.points.length} puntos</p>
-        <div class="card-actions"><button data-view="${route.id}">Ver en mapa</button><button data-delete="${route.id}">Eliminar</button></div>
+        <div class="card-actions"><button data-simulate="${route.id}">▶ Simular</button><button data-view="${route.id}">Ver en mapa</button><button data-delete="${route.id}">Eliminar</button></div>
       </article>`;
     }
     return `<article class="history-card planned">
@@ -478,6 +692,7 @@ function renderHistory() {
     </article>`;
   }).join("") : '<p class="empty">Todavía no hay recorridos guardados.</p>';
 
+  document.querySelectorAll("[data-simulate]").forEach(button => button.addEventListener("click", () => startRouteSimulation(Number(button.dataset.simulate))));
   document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => showRecordedRoute(Number(button.dataset.view))));
   document.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", () => deleteRoute(Number(button.dataset.delete))));
 }
@@ -499,6 +714,24 @@ $("#clear-history").addEventListener("click", () => {
     localStorage.removeItem(STORAGE_KEY);
     renderHistory();
   }
+});
+
+$("#simulation-toggle").addEventListener("click", toggleSimulation);
+$("#simulation-restart").addEventListener("click", restartSimulation);
+$("#simulation-close").addEventListener("click", closeSimulation);
+$("#simulation-speed").addEventListener("change", event => {
+  if (state.simulation) state.simulation.speed = Number(event.target.value) || 1;
+});
+$("#simulation-progress").addEventListener("input", event => {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  simulation.playing = false;
+  simulation.lastFrameTime = null;
+  cancelAnimationFrame(simulation.frameId);
+  const fraction = Number(event.target.value) / 1000;
+  simulation.elapsedAnimationMs = simulation.animationDurationMs * fraction;
+  renderSimulation(fraction, true);
+  $("#simulation-toggle").textContent = fraction >= 1 ? "▶ Repetir" : "▶ Continuar";
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
