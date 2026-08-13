@@ -710,10 +710,10 @@ function saveRoute(route) {
 function vehicleMarkerOptions() {
   return {
     className: "vehicle-icon-shell",
-    size: 13,
+    size: 18,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=16" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=17" alt="" aria-hidden="true">
     </div>`
   };
 }
