@@ -581,10 +581,10 @@ function startRouteSimulation(id) {
   $("#simulation-title").textContent = simulationName;
   setSimulationDetailsVisible(false);
   setSimulationPanelVisible(true);
-  $("#simulation-toggle").textContent = "❚❚ Pausar";
   $("#simulation-progress").value = "0";
   $("#simulation-speed").value = "1";
   state.simulation.speed = 1;
+  updateSimulationPlaybackControls();
   if (route.type === "recorded") setGpsStatus("Simulando recorrido", simulationName, "good");
   else setMessage("Simulando la ruta planificada.");
   map.fit(latlngs, 55);
@@ -610,7 +610,7 @@ function simulationFrame(timestamp) {
   if (fraction >= 1) {
     simulation.playing = false;
     simulation.lastFrameTime = null;
-    $("#simulation-toggle").textContent = "▶ Repetir";
+    updateSimulationPlaybackControls();
     if (simulation.route.type === "recorded") setGpsStatus("Simulación finalizada", simulation.route.name, "good");
     else setMessage("Simulación de la ruta planificada finalizada.");
     return;
@@ -672,24 +672,43 @@ function bearingBetween(from, to) {
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
-function toggleSimulation() {
+function updateSimulationPlaybackControls() {
   const simulation = state.simulation;
-  if (!simulation) return;
-  if (simulation.playing) {
-    simulation.playing = false;
-    simulation.lastFrameTime = null;
-    cancelAnimationFrame(simulation.frameId);
-    $("#simulation-toggle").textContent = "▶ Continuar";
+  const playButton = $("#simulation-play");
+  const pauseButton = $("#simulation-pause");
+  if (!simulation) {
+    playButton.disabled = true;
+    pauseButton.disabled = true;
+    playButton.textContent = "▶ Iniciar";
     return;
   }
+  playButton.disabled = simulation.playing;
+  pauseButton.disabled = !simulation.playing;
+  playButton.textContent = simulation.elapsedAnimationMs >= simulation.animationDurationMs
+    ? "▶ Repetir"
+    : simulation.elapsedAnimationMs > 0 ? "▶ Continuar" : "▶ Iniciar";
+}
+
+function playSimulation() {
+  const simulation = state.simulation;
+  if (!simulation || simulation.playing) return;
   if (simulation.elapsedAnimationMs >= simulation.animationDurationMs) {
     simulation.elapsedAnimationMs = 0;
     renderSimulation(0, true);
   }
   simulation.playing = true;
   simulation.lastFrameTime = null;
-  $("#simulation-toggle").textContent = "❚❚ Pausar";
+  updateSimulationPlaybackControls();
   simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function pauseSimulation() {
+  const simulation = state.simulation;
+  if (!simulation || !simulation.playing) return;
+  simulation.playing = false;
+  simulation.lastFrameTime = null;
+  cancelAnimationFrame(simulation.frameId);
+  updateSimulationPlaybackControls();
 }
 
 function restartSimulation() {
@@ -700,8 +719,39 @@ function restartSimulation() {
   simulation.lastFrameTime = null;
   simulation.playing = true;
   renderSimulation(0, true);
-  $("#simulation-toggle").textContent = "❚❚ Pausar";
+  updateSimulationPlaybackControls();
   simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function locateSimulationUser() {
+  const button = $("#simulation-locate");
+  if (!navigator.geolocation) {
+    showMapBanner("Este dispositivo no permite consultar la ubicación.", "warning", 6000);
+    return;
+  }
+
+  pauseSimulation();
+  button.disabled = true;
+  button.textContent = "Buscando GPS…";
+  showMapBanner("Buscando tu ubicación actual…", "info", 0);
+  navigator.geolocation.getCurrentPosition(position => {
+    const point = { lat: position.coords.latitude, lng: position.coords.longitude };
+    const accuracy = Math.max(5, Math.round(position.coords.accuracy) || 20);
+    updateCurrentLocation(point, accuracy);
+    map.setView(point, Math.max(map.getZoom(), 17));
+    button.disabled = false;
+    button.textContent = "◎ Mi ubicación";
+    showMapBanner(`Ubicación encontrada con precisión aproximada de ±${accuracy} m. Pulsa continuar para reanudar.`, "info", 6000);
+  }, error => {
+    const messages = {
+      1: "Debes permitir el acceso a la ubicación para usar este botón.",
+      2: "No fue posible encontrar tu ubicación. Activa el GPS.",
+      3: "El GPS tardó demasiado. Intenta nuevamente en un lugar abierto."
+    };
+    button.disabled = false;
+    button.textContent = "◎ Mi ubicación";
+    showMapBanner(messages[error.code] || "No fue posible consultar tu ubicación.", "warning", 7000);
+  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
 }
 
 function setSimulationPanelVisible(visible) {
@@ -716,6 +766,7 @@ function setSimulationDetailsVisible(visible) {
   const description = $("#simulation-description");
   const toggle = $("#simulation-details-toggle");
   description.hidden = !visible;
+  $("#simulation-panel").classList.toggle("details-open", visible);
   toggle.setAttribute("aria-expanded", String(visible));
   toggle.setAttribute("aria-label", visible ? "Ocultar descripción del recorrido" : "Mostrar descripción del recorrido");
 }
@@ -746,6 +797,13 @@ function closeSimulation() {
   }
   const description = $("#simulation-description");
   if (description) description.hidden = true;
+  panel?.classList.remove("details-open");
+  const locateButton = $("#simulation-locate");
+  if (locateButton) {
+    locateButton.disabled = false;
+    locateButton.textContent = "◎ Mi ubicación";
+  }
+  updateSimulationPlaybackControls();
 }
 
 function showRecordedRoute(id) {
@@ -873,8 +931,10 @@ $("#clear-history").addEventListener("click", () => {
   }
 });
 
-$("#simulation-toggle").addEventListener("click", toggleSimulation);
+$("#simulation-play").addEventListener("click", playSimulation);
+$("#simulation-pause").addEventListener("click", pauseSimulation);
 $("#simulation-restart").addEventListener("click", restartSimulation);
+$("#simulation-locate").addEventListener("click", locateSimulationUser);
 $("#simulation-show").addEventListener("click", () => setSimulationPanelVisible(true));
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
@@ -887,13 +947,11 @@ $("#simulation-speed").addEventListener("change", event => {
 $("#simulation-progress").addEventListener("input", event => {
   const simulation = state.simulation;
   if (!simulation) return;
-  simulation.playing = false;
-  simulation.lastFrameTime = null;
-  cancelAnimationFrame(simulation.frameId);
+  pauseSimulation();
   const fraction = Number(event.target.value) / 1000;
   simulation.elapsedAnimationMs = simulation.animationDurationMs * fraction;
   renderSimulation(fraction, true);
-  $("#simulation-toggle").textContent = fraction >= 1 ? "▶ Repetir" : "▶ Continuar";
+  updateSimulationPlaybackControls();
 });
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
