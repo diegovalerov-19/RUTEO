@@ -2,8 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruteo | Planificador de recorridos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f2c">
+  <meta name="description" content="Captura y planifica recorridos desde tu celular.">
+  <title>Ruteo | Captura de recorridos</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css">
@@ -11,56 +15,103 @@
 <body>
   <main class="app-shell">
     <aside class="panel">
-      <header>
-        <p class="eyebrow">PLANIFICADOR</p>
-        <h1>Ruteo</h1>
-        <p class="intro">Define tu recorrido, programa cuándo se realizará y guarda el registro.</p>
+      <header class="brand">
+        <div>
+          <p class="eyebrow">CAPTURA EN CAMPO</p>
+          <h1>Ruteo</h1>
+        </div>
+        <span id="online-status" class="connection-pill">En línea</span>
       </header>
 
-      <form id="route-form">
-        <label for="start">Punto de partida</label>
-        <div class="input-row">
-          <input id="start" name="start" placeholder="Ej. Plaza de Bolívar, Bogotá" required>
-          <button class="icon-button" type="button" data-search="start" aria-label="Buscar punto de partida">⌕</button>
-        </div>
+      <nav class="mode-tabs" aria-label="Modo de uso">
+        <button class="mode-tab active" data-mode="capture" type="button">Grabar recorrido</button>
+        <button class="mode-tab" data-mode="plan" type="button">Planificar ruta</button>
+      </nav>
 
-        <label for="end">Punto final</label>
-        <div class="input-row">
-          <input id="end" name="end" placeholder="Ej. Parque de la 93, Bogotá" required>
-          <button class="icon-button" type="button" data-search="end" aria-label="Buscar punto final">⌕</button>
-        </div>
+      <section id="capture-mode" class="mode-panel">
+        <p class="intro">Pulsa iniciar y avanza con el celular. El GPS dibujará tu recorrido automáticamente.</p>
 
-        <div class="two-columns">
+        <label for="track-name">Nombre del recorrido <span>(opcional)</span></label>
+        <input id="track-name" placeholder="Ej. Entrega zona norte">
+
+        <div class="gps-status" id="gps-status">
+          <span class="gps-dot"></span>
           <div>
-            <label for="date">Día del ruteo</label>
-            <input id="date" name="date" type="date" required>
-          </div>
-          <div>
-            <label for="time">Hora establecida</label>
-            <input id="time" name="time" type="time" required>
+            <strong id="gps-title">GPS listo para iniciar</strong>
+            <small id="gps-detail">Activa la ubicación de tu celular.</small>
           </div>
         </div>
 
-        <p id="map-help" class="help">También puedes hacer clic en el mapa: primero el origen y luego el destino.</p>
-        <p id="message" class="message" role="status" aria-live="polite"></p>
-        <button id="calculate" class="primary-button" type="submit">Calcular y guardar ruta</button>
-        <button id="reset" class="secondary-button" type="button">Limpiar puntos</button>
-      </form>
+        <section class="live-metrics" aria-live="polite">
+          <div><span>Distancia</span><strong id="live-distance">0 m</strong></div>
+          <div><span>Tiempo</span><strong id="live-duration">00:00</strong></div>
+          <div><span>Precisión</span><strong id="live-accuracy">—</strong></div>
+          <div><span>Puntos GPS</span><strong id="live-points">0</strong></div>
+        </section>
 
-      <section class="summary" aria-live="polite">
-        <div><span>Distancia</span><strong id="distance">—</strong></div>
-        <div><span>Duración estimada</span><strong id="duration">—</strong></div>
+        <div class="capture-actions">
+          <button id="start-capture" class="primary-button capture-button" type="button">
+            <span class="button-icon">●</span><span>Iniciar recorrido</span>
+          </button>
+          <button id="pause-capture" class="secondary-button" type="button" hidden>Pausar</button>
+          <button id="finish-capture" class="danger-button" type="button" hidden>Finalizar y guardar</button>
+        </div>
+
+        <button id="recenter" class="text-button" type="button" disabled>◎ Centrar en mi ubicación</button>
+        <p class="mobile-note">Para una captura continua, mantén Ruteo abierto y la ubicación activada. La pantalla se mantendrá encendida cuando el dispositivo lo permita.</p>
+      </section>
+
+      <section id="plan-mode" class="mode-panel" hidden>
+        <p class="intro">Define un origen, un destino y cuándo realizarás el recorrido.</p>
+        <form id="route-form">
+          <label for="start">Punto de partida</label>
+          <div class="input-row">
+            <input id="start" name="start" placeholder="Ej. Plaza de Bolívar, Bogotá" required>
+            <button class="icon-button" type="button" data-search="start" aria-label="Buscar punto de partida">⌕</button>
+          </div>
+
+          <label for="end">Punto final</label>
+          <div class="input-row">
+            <input id="end" name="end" placeholder="Ej. Parque de la 93, Bogotá" required>
+            <button class="icon-button" type="button" data-search="end" aria-label="Buscar punto final">⌕</button>
+          </div>
+
+          <div class="two-columns">
+            <div>
+              <label for="date">Día del ruteo</label>
+              <input id="date" name="date" type="date" required>
+            </div>
+            <div>
+              <label for="time">Hora establecida</label>
+              <input id="time" name="time" type="time" required>
+            </div>
+          </div>
+
+          <p class="help">También puedes tocar el mapa: primero el origen y luego el destino.</p>
+          <p id="message" class="message" role="status" aria-live="polite"></p>
+          <button id="calculate" class="primary-button" type="submit">Calcular y guardar ruta</button>
+          <button id="reset" class="secondary-button" type="button">Limpiar puntos</button>
+        </form>
+
+        <section class="summary" aria-live="polite">
+          <div><span>Distancia</span><strong id="distance">—</strong></div>
+          <div><span>Duración estimada</span><strong id="duration">—</strong></div>
+        </section>
       </section>
 
       <section class="history-section">
         <div class="section-title">
-          <h2>Rutas guardadas</h2>
-          <button id="clear-history" type="button">Borrar todas</button>
+          <h2>Recorridos guardados</h2>
+          <button id="clear-history" type="button">Borrar todos</button>
         </div>
         <div id="history" class="history"></div>
       </section>
     </aside>
-    <section id="map" aria-label="Mapa para seleccionar la ruta"></section>
+
+    <section class="map-shell">
+      <div id="map" aria-label="Mapa del recorrido"></div>
+      <div id="map-banner" class="map-banner" hidden></div>
+    </section>
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
