@@ -386,8 +386,489 @@ $("#recenter").addEventListener("click", () => {
   map.setView(last, Math.max(map.getZoom(), 17));
 });
 
-map.on("dragstart", () => { if (state.track?.status === "Ûmø¶‰žËkºwµçUÑ”¹‘ÕÉ…Ñ¥½¹5¥¸€¨€ØÀÀÀÀ¤¤ì(€½¹ÍÐ…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ì€ô5…Ñ ¹µ¥¸ (€€€M%5U1Q%=9}5a}UIQ%=9}5L°(€€€5…Ñ ¹µ…à¡M%5U1Q%=9}5%9}UIQ%=9}5L°½É¥¥¹…±ÕÉ…Ñ¥½¹5Ì€¼M%5U1Q%=9}=5AIMM%=8¤(€€¤ì(€½¹ÍÐÁ•¹‘¥¹1¥¹”€ôµ…À¹É•…Ñ•A½±å±¥¹”¡±…Ñ±¹Ì°ì½±½Èè€ˆŒÜÜÜÜÜÜˆ°Ý•¥¡Ðè€Ø°½Á…¥Ñäè€À¸Ðà°‘…Í¡ÉÉ…äè€ˆà€àˆô¤ì(€½¹ÍÐ½µÁ±•Ñ•‘1¥¹”€ôµ…À¹É•…Ñ•A½±å±¥¹”¡m±…Ñ±¹ÍlÁut°ì½±½Èè€ˆ”ÌÀØÄÌˆ°Ý•¥¡Ðè€Ü°½Á…¥Ñäè€À¸äàô¤ì(€½¹ÍÐµ…É­•È€ôµ…À¹É•…Ñ•!Ñµ±5…É­•È¡±…Ñ±¹ÍlÁt°Ù•¡¥±•5…É­•É=ÁÑ¥½¹Ì ¤¤ì((€ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸€ôì(€€€É½ÕÑ”°(€€€Á½¥¹ÑÌ°(€€€±…Ñ±¹Ì°(€€€ÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•Ì°(€€€•½µ•ÑÉå¥ÍÑ…¹”èÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•Ì¹…Ð ´Ä¤°(€€€½É¥¥¹…±ÕÉ…Ñ¥½¹5Ì°(€€€…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ì°(€€€•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ìè€À°(€€€ÍÁ••è9Õµ‰•È  ˆÍ¥µÕ±…Ñ¥½¸µÍÁ••ˆ¤¹Ù…±Õ”¤ñð€Ä°(€€€Á±…å¥¹œèÑÉÕ”°(€€€±…ÍÑÉ…µ•Q¥µ”è¹Õ±°°(€€€±…ÍÑA…¹Q¥µ”è€À°(€€€™É…µ•%è¹Õ±°°(€€€Á•¹‘¥¹1¥¹”°(€€€½µÁ±•Ñ•‘1¥¹”°(€€€µ…É­•È(€ôì((€½¹ÍÐÍ¥µÕ±…Ñ¥½¹9…µ”€ôÉ½ÕÑ”¹ÑåÁ”€ôôô€‰É•½É‘•ˆ€üÉ½ÕÑ”¹¹…µ”€è€‘íÉ½ÕÑ”¹ÍÑ…ÉÑôƒŠH€‘íÉ½ÕÑ”¹•¹‘õ€ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ¥Ñ±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ôÍ¥µÕ±…Ñ¥½¹9…µ”ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÁ…¹•°ˆ¤¹¡¥‘‘•¸€ô™…±Í”ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‹ŠvkŠvhA…ÕÍ…Èˆì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÁÉ½É•ÍÌˆ¤¹Ù…±Õ”€ô€ˆÀˆì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÍÁ••ˆ¤¹Ù…±Õ”€ô€ˆÄˆì(€ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸¹ÍÁ••€ô€Äì(€¥˜€¡É½ÕÑ”¹ÑåÁ”€ôôô€‰É•½É‘•ˆ¤Í•ÑÁÍMÑ…ÑÕÌ ‰M¥µÕ±…¹‘¼É•½ÉÉ¥‘¼ˆ°Í¥µÕ±…Ñ¥½¹9…µ”°€‰½½ˆ¤ì(€•±Í”Í•Ñ5•ÍÍ…” ‰M¥µÕ±…¹‘¼±„ÉÕÑ„Á±…¹¥™¥…‘„¸ˆ¤ì(€µ…À¹™¥Ð¡±…Ñ±¹Ì°€ÔÔ¤ì(€É•¹‘•ÉM¥µÕ±…Ñ¥½¸ À°™…±Í”¤ì(€ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸¹™É…µ•%€ôÉ•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¹É…µ”¤ì)ô()™Õ¹Ñ¥½¸Í¥µÕ±…Ñ¥½¹É…µ”¡Ñ¥µ•ÍÑ…µÀ¤ì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€ …Í¥µÕ±…Ñ¥½¸ü¹Á±…å¥¹œ¤É•ÑÕÉ¸ì(€¥˜€¡Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ôôô¹Õ±°¤Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ôÑ¥µ•ÍÑ…µÀì(€½¹ÍÐ‘•±Ñ„€ôÑ¥µ•ÍÑ…µÀ€´Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”ì(€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ôÑ¥µ•ÍÑ…µÀì(€Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€ô5…Ñ ¹µ¥¸ (€€€Í¥µÕ±…Ñ¥½¸¹…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ì°(€€€Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€¬‘•±Ñ„€¨Í¥µÕ±…Ñ¥½¸¹ÍÁ••(€€¤ì(€½¹ÍÐ™É…Ñ¥½¸€ôÍ¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€¼Í¥µÕ±…Ñ¥½¸¹…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ìì(€É•¹‘•ÉM¥µÕ±…Ñ¥½¸¡™É…Ñ¥½¸°Ñ¥µ•ÍÑ…µÀ€´Í¥µÕ±…Ñ¥½¸¹±…ÍÑA…¹Q¥µ”€ø€ÐÔÀ¤ì(€¥˜€¡Ñ¥µ•ÍÑ…µÀ€´Í¥µÕ±…Ñ¥½¸¹±…ÍÑA…¹Q¥µ”€ø€ÐÔÀ¤Í¥µÕ±…Ñ¥½¸¹±…ÍÑA…¹Q¥µ”€ôÑ¥µ•ÍÑ…µÀì((€¥˜€¡™É…Ñ¥½¸€øô€Ä¤ì(€€€Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ€ô™…±Í”ì(€€€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ô¹Õ±°ì(€€€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‹ŠZØI•Á•Ñ¥Èˆì(€€€¥˜€¡Í¥µÕ±…Ñ¥½¸¹É½ÕÑ”¹ÑåÁ”€ôôô€‰É•½É‘•ˆ¤Í•ÑÁÍMÑ…ÑÕÌ ‰M¥µÕ±…§Í¸™¥¹…±¥é…‘„ˆ°Í¥µÕ±…Ñ¥½¸¹É½ÕÑ”¹¹…µ”°€‰½½ˆ¤ì(€€€•±Í”Í•Ñ5•ÍÍ…” ‰M¥µÕ±…§Í¸‘”±„ÉÕÑ„Á±…¹¥™¥…‘„™¥¹…±¥é…‘„¸ˆ¤ì(€€€É•ÑÕÉ¸ì(€ô(€Í¥µÕ±…Ñ¥½¸¹™É…µ•%€ôÉ•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¹É…µ”¤ì)ô()™Õ¹Ñ¥½¸É•¹‘•ÉM¥µÕ±…Ñ¥½¸¡™É…Ñ¥½¸°™½±±½ÝY•¡¥±”€ôÑÉÕ”¤ì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€ …Í¥µÕ±…Ñ¥½¸¤É•ÑÕÉ¸ì(€½¹ÍÐÍ…™•É…Ñ¥½¸€ô5…Ñ ¹µ¥¸ Ä°5…Ñ ¹µ…à À°™É…Ñ¥½¸¤¤ì(€±•ÐÍ•µ•¹Ñ%¹‘•à€ô€Àì(€±•ÐÍ•µ•¹ÑÉ…Ñ¥½¸€ô€Àì((€¥˜€¡Í¥µÕ±…Ñ¥½¸¹•½µ•ÑÉå¥ÍÑ…¹”€ø€À¤ì(€€€½¹ÍÐÑ…É•Ñ¥ÍÑ…¹”€ôÍ¥µÕ±…Ñ¥½¸¹•½µ•ÑÉå¥ÍÑ…¹”€¨Í…™•É…Ñ¥½¸ì(€€€Ý¡¥±”€ (€€€€€Í•µ•¹Ñ%¹‘•à€ðÍ¥µÕ±…Ñ¥½¸¹ÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•Ì¹±•¹Ñ €´€È€˜˜(€€€€€Í¥µÕ±…Ñ¥½¸¹ÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•ÍmÍ•µ•¹Ñ%¹‘•à€¬€Åt€ðÑ…É•Ñ¥ÍÑ…¹”(€€€€¤Í•µ•¹Ñ%¹‘•à€¬ô€Äì(€€€½¹ÍÐÍ•µ•¹ÑMÑ…ÉÐ€ôÍ¥µÕ±…Ñ¥½¸¹ÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•ÍmÍ•µ•¹Ñ%¹‘•átì(€€€½¹ÍÐÍ•µ•¹Ñ1•¹Ñ €ôÍ¥µÕ±…Ñ¥½¸¹ÕµÕ±…Ñ¥Ù•¥ÍÑ…¹•ÍmÍ•µ•¹Ñ%¹‘•à€¬€Åt€´Í•µ•¹ÑMÑ…ÉÐì(€€€Í•µ•¹ÑÉ…Ñ¥½¸€ôÍ•µ•¹Ñ1•¹Ñ €ü€¡Ñ…É•Ñ¥ÍÑ…¹”€´Í•µ•¹ÑMÑ…ÉÐ¤€¼Í•µ•¹Ñ1•¹Ñ €è€Àì(€ô•±Í”ì(€€€½¹ÍÐÍ…±•‘%¹‘•à€ôÍ…™•É…Ñ¥½¸€¨€¡Í¥µÕ±…Ñ¥½¸¹±…Ñ±¹Ì¹±•¹Ñ €´€Ä¤ì(€€€Í•µ•¹Ñ%¹‘•à€ô5…Ñ ¹µ¥¸¡Í¥µÕ±…Ñ¥½¸¹±…Ñ±¹Ì¹±•¹Ñ €´€È°5…Ñ ¹™±½½È¡Í…±•‘%¹‘•à¤¤ì(€€€Í•µ•¹ÑÉ…Ñ¥½¸€ôÍ…±•‘%¹‘•à€´Í•µ•¹Ñ%¹‘•àì(€ô((€½¹ÍÐ™É½´€ôÍ¥µÕ±…Ñ¥½¸¹±…Ñ±¹ÍmÍ•µ•¹Ñ%¹‘•átì(€½¹ÍÐÑ¼€ôÍ¥µÕ±…Ñ¥½¸¹±…Ñ±¹ÍmÍ•µ•¹Ñ%¹‘•à€¬€Åtì(€½¹ÍÐÕÉÉ•¹Ð€ôì(€€€±…Ðè™É½´¹±…Ð€¬€¡Ñ¼¹±…Ð€´™É½´¹±…Ð¤€¨Í•µ•¹ÑÉ…Ñ¥½¸°(€€€±¹œè™É½´¹±¹œ€¬€¡Ñ¼¹±¹œ€´™É½´¹±¹œ¤€¨Í•µ•¹ÑÉ…Ñ¥½¸(€ôì(€½¹ÍÐ½µÁ±•Ñ•‘A½¥¹ÑÌ€ôÍ¥µÕ±…Ñ¥½¸¹±…Ñ±¹Ì¹Í±¥” À°Í•µ•¹Ñ%¹‘•à€¬€Ä¤¹½¹…Ð¡ÕÉÉ•¹Ð¤ì(€½¹ÍÐÁ•¹‘¥¹A½¥¹ÑÌ€ômÕÉÉ•¹Ñt¹½¹…Ð¡Í¥µÕ±…Ñ¥½¸¹±…Ñ±¹Ì¹Í±¥”¡Í•µ•¹Ñ%¹‘•à€¬€Ä¤¤ì(€Í¥µÕ±…Ñ¥½¸¹½µÁ±•Ñ•‘1¥¹”¹Í•ÑA½¥¹ÑÌ¡½µÁ±•Ñ•‘A½¥¹ÑÌ¤ì(€Í¥µÕ±…Ñ¥½¸¹Á•¹‘¥¹1¥¹”¹Í•ÑA½¥¹ÑÌ¡Á•¹‘¥¹A½¥¹ÑÌ¤ì(€Í¥µÕ±…Ñ¥½¸¹µ…É­•È¹Í•ÑA½Í¥Ñ¥½¸¡ÕÉÉ•¹Ð¤ì((€½¹ÍÐÙ•¡¥±”€ôÍ¥µÕ±…Ñ¥½¸¹µ…É­•È¹•Ñ±•µ•¹Ð ¤ü¹ÅÕ•ÉåM•±•Ñ½È ˆ¹Ù•¡¥±”µµ…É­•Èˆ¤ì(€¥˜€¡Ù•¡¥±”¤Ù•¡¥±”¹ÍÑå±”¹Í•ÑAÉ½Á•ÉÑä ˆ´µÙ•¡¥±”µÉ½Ñ…Ñ¥½¸ˆ°€‘í‰•…É¥¹	•ÑÝ••¸¡™É½´°Ñ¼¥õ‘•€¤ì(€¥˜€¡™½±±½ÝY•¡¥±”¤µ…À¹Á…¹Q¼¡ÕÉÉ•¹Ð¤ì((€½¹ÍÐÍ¥µÕ±…Ñ•‘ÕÉ…Ñ¥½¸€ôÍ¥µÕ±…Ñ¥½¸¹½É¥¥¹…±ÕÉ…Ñ¥½¹5Ì€¨Í…™•É…Ñ¥½¸ì(€½¹ÍÐÉ½ÕÑ•¥ÍÑ…¹”€ôÍ¥µÕ±…Ñ¥½¸¹É½ÕÑ”¹‘¥ÍÑ…¹•5•Ñ•ÉÌñð€¡Í¥µÕ±…Ñ¥½¸¹É½ÕÑ”¹‘¥ÍÑ…¹•-´€¨€ÄÀÀÀ¤ñðÍ¥µÕ±…Ñ¥½¸¹•½µ•ÑÉå¥ÍÑ…¹”ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÁÉ½É•ÍÌˆ¤¹Ù…±Õ”€ôMÑÉ¥¹œ¡5…Ñ ¹É½Õ¹¡Í…™•É…Ñ¥½¸€¨€ÄÀÀÀ¤¤ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ¥µ”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‘í™½Éµ…ÑÕÉ…Ñ¥½¸¡Í¥µÕ±…Ñ•‘ÕÉ…Ñ¥½¸¥ô€¼€‘í™½Éµ…ÑÕÉ…Ñ¥½¸¡Í¥µÕ±…Ñ¥½¸¹½É¥¥¹…±ÕÉ…Ñ¥½¹5Ì¥õ€ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µ‘¥ÍÑ…¹”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‘í™½Éµ…Ñ¥ÍÑ…¹”¡É½ÕÑ•¥ÍÑ…¹”€¨Í…™•É…Ñ¥½¸¥ô€¼€‘í™½Éµ…Ñ¥ÍÑ…¹”¡É½ÕÑ•¥ÍÑ…¹”¥õ€ì)ô()™Õ¹Ñ¥½¸‰•…É¥¹	•ÑÝ••¸¡™É½´°Ñ¼¤ì(€½¹ÍÐÍÑ…ÉÑ1…Ð€ô™É½´¹±…Ð€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐ•¹‘1…Ð€ôÑ¼¹±…Ð€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐ±½¹¥ÑÕ‘••±Ñ„€ô€¡Ñ¼¹±¹œ€´™É½´¹±¹œ¤€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐä€ô5…Ñ ¹Í¥¸¡±½¹¥ÑÕ‘••±Ñ„¤€¨5…Ñ ¹½Ì¡•¹‘1…Ð¤ì(€½¹ÍÐà€ô5…Ñ ¹½Ì¡ÍÑ…ÉÑ1…Ð¤€¨5…Ñ ¹Í¥¸¡•¹‘1…Ð¤€´5…Ñ ¹Í¥¸¡ÍÑ…ÉÑ1…Ð¤€¨5…Ñ ¹½Ì¡•¹‘1…Ð¤€¨5…Ñ ¹½Ì¡±½¹¥ÑÕ‘••±Ñ„¤ì(€É•ÑÕÉ¸€¡5…Ñ ¹…Ñ…¸È¡ä°à¤€¨€ÄàÀ€¼5…Ñ ¹A$€¬€ÌØÀ¤€”€ÌØÀì)ô()™Õ¹Ñ¥½¸Ñ½±•M¥µÕ±…Ñ¥½¸ ¤ì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€ …Í¥µÕ±…Ñ¥½¸¤É•ÑÕÉ¸ì(€¥˜€¡Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ¤ì(€€€Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ€ô™…±Í”ì(€€€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ô¹Õ±°ì(€€€…¹•±¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¸¹™É…µ•%¤ì(€€€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‹ŠZØ½¹Ñ¥¹Õ…Èˆì(€€€É•ÑÕÉ¸ì(€ô(€¥˜€¡Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€øôÍ¥µÕ±…Ñ¥½¸¹…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ì¤ì(€€€Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€ô€Àì(€€€É•¹‘•ÉM¥µÕ±…Ñ¥½¸ À°ÑÉÕ”¤ì(€ô(€Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ€ôÑÉÕ”ì(€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ô¹Õ±°ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‹ŠvkŠvhA…ÕÍ…Èˆì(€Í¥µÕ±…Ñ¥½¸¹™É…µ•%€ôÉ•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¹É…µ”¤ì)ô()™Õ¹Ñ¥½¸É•ÍÑ…ÉÑM¥µÕ±…Ñ¥½¸ ¤ì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€ …Í¥µÕ±…Ñ¥½¸¤É•ÑÕÉ¸ì(€…¹•±¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¸¹™É…µ•%¤ì(€Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€ô€Àì(€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ô¹Õ±°ì(€Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ€ôÑÉÕ”ì(€É•¹‘•ÉM¥µÕ±…Ñ¥½¸ À°ÑÉÕ”¤ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‹ŠvkŠvhA…ÕÍ…Èˆì(€Í¥µÕ±…Ñ¥½¸¹™É…µ•%€ôÉ•ÅÕ•ÍÑ¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¹É…µ”¤ì)ô()™Õ¹Ñ¥½¸±½Í•M¥µÕ±…Ñ¥½¸ ¤ì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€¡Í¥µÕ±…Ñ¥½¸¤ì(€€€…¹•±¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¸¹™É…µ•%¤ì(€€€mÍ¥µÕ±…Ñ¥½¸¹Á•¹‘¥¹1¥¹”°Í¥µÕ±…Ñ¥½¸¹½µÁ±•Ñ•‘1¥¹”°Í¥µÕ±…Ñ¥½¸¹µ…É­•Ét¹™½É… ¡±…å•È€ôøì(€€€€€¥˜€¡±…å•È€˜˜µ…À¹½¹Ñ…¥¹Ì¡±…å•È¤¤µ…À¹É•µ½Ù”¡±…å•È¤ì(€€€ô¤ì(€ô(€ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸€ô¹Õ±°ì(€½¹ÍÐÁ…¹•°€ô€ ˆÍ¥µÕ±…Ñ¥½¸µÁ…¹•°ˆ¤ì(€¥˜€¡Á…¹•°¤Á…¹•°¹¡¥‘‘•¸€ôÑÉÕ”ì)ô()™Õ¹Ñ¥½¸Í¡½ÝI•½É‘•‘I½ÕÑ”¡¥¤ì(€½¹ÍÐÉ½ÕÑ”€ô•ÑI½ÕÑ•Ì ¤¹™¥¹¡¥Ñ•´€ôø¥Ñ•´¹¥€ôôô¥€˜˜¥Ñ•´¹ÑåÁ”€ôôô€‰É•½É‘•ˆ¤ì(€¥˜€ …É½ÕÑ”¤É•ÑÕÉ¸ì(€±½Í•M¥µÕ±…Ñ¥½¸ ¤ì(€Í•Ñ5½‘” ‰…ÁÑÕÉ”ˆ¤ì(€±•…É…ÁÑÕÉ•1…å•ÉÌ ¤ì(€ÍÑ…Ñ”¹ÑÉ…¬€ôÉ½ÕÑ”ì(€ÍÑ…Ñ”¹ÑÉ…­1¥¹”¹Í•ÑA½¥¹ÑÌ¡É½ÕÑ”¹Á½¥¹ÑÌ¤ì(€¥˜€¡ÍÑ…Ñ”¹ÑÉ…­1¥¹”¹•ÑA½¥¹ÑÌ ¤¹±•¹Ñ ¤µ…À¹™¥Ð¡ÍÑ…Ñ”¹ÑÉ…­1¥¹”¹•ÑA½¥¹ÑÌ ¤°€ÌÔ¤ì(€€ ˆ±¥Ù”µ‘¥ÍÑ…¹”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô™½Éµ…Ñ¥ÍÑ…¹”¡É½ÕÑ”¹‘¥ÍÑ…¹•5•Ñ•ÉÌ¤ì(€€ ˆ±¥Ù”µ‘ÕÉ…Ñ¥½¸ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô™½Éµ…ÑÕÉ…Ñ¥½¸¡•Ñ±…ÁÍ•‘5¥±±¥Í•½¹‘Ì¡É½ÕÑ”¤¤ì(€€ ˆ±¥Ù”µÁ½¥¹ÑÌˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ôÉ½ÕÑ”¹Á½¥¹ÑÌ¹±•¹Ñ ì(€Í•ÑÁÍMÑ…ÑÕÌ ‰I•½ÉÉ¥‘¼Õ…É‘…‘¼ˆ°É½ÕÑ”¹¹…µ”°€‰½½ˆ¤ì(€ÍÑ…ÉÑ…ÁÑÕÉ•	ÕÑÑ½¸¹‘¥Í…‰±•€ô™…±Í”ì(€ÍÑ…ÉÑ…ÁÑÕÉ•	ÕÑÑ½¸¹ÅÕ•ÉåM•±•Ñ½È ‰ÍÁ…¸é±…ÍÐµ¡¥±ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‰%¹¥¥…È½ÑÉ¼É•½ÉÉ¥‘¼ˆì)ô()™Õ¹Ñ¥½¸Í¡½ÝA±…¹¹•‘I½ÕÑ”¡¥¤ì(€½¹ÍÐÉ½ÕÑ”€ô•ÑI½ÕÑ•Ì ¤¹™¥¹¡¥Ñ•´€ôø¥Ñ•´¹¥€ôôô¥€˜˜¥Ñ•´¹ÑåÁ”€ôôô€‰Á±…¹¹•ˆ¤ì(€½¹ÍÐÁ½¥¹ÑÌ€ôÝ¥¹‘½Ü¹I½ÕÑ•áÁ½ÉÐ¹É½ÕÑ•A½¥¹ÑÌ¡É½ÕÑ”¤ì(€¥˜€ …É½ÕÑ”ñðÁ½¥¹ÑÌ¹±•¹Ñ €ð€È¤ì(€€€Í¡½Ý5…Á	…¹¹•È ‰ÍÑ„ÉÕÑ„Á±…¹¥™¥…‘„•Ì…¹Ñ¥Õ„ä¹¼Ñ¥•¹”½½É‘•¹…‘…ÌÕ…É‘…‘…Ì¸…±é±…±„¹Õ•Ù…µ•¹Ñ”¸ˆ°€‰Ý…É¹¥¹œˆ°€ÜÀÀÀ¤ì(€€€É•ÑÕÉ¸ì(€ô(€±½Í•M¥µÕ±…Ñ¥½¸ ¤ì(€Í•Ñ5½‘” ‰Á±…¸ˆ¤ì(€É•Í•ÑA±…¹¹•‘A½¥¹ÑÌ ¤ì(€ÍÑ…Ñ”¹ÍÑ…ÉÐ€ôì€¸¸¹Á½¥¹ÑÍlÁt°±…‰•°èÉ½ÕÑ”¹ÍÑ…ÉÐôì(€ÍÑ…Ñ”¹•¹€ôì€¸¸¹Á½¥¹ÑÌ¹…Ð ´Ä¤°±…‰•°èÉ½ÕÑ”¹•¹ôì(€Í•ÑA½¥¹Ð ‰ÍÑ…ÉÐˆ°ÍÑ…Ñ”¹ÍÑ…ÉÐ°É½ÕÑ”¹ÍÑ…ÉÐ¤ì(€Í•ÑA½¥¹Ð ‰•¹ˆ°ÍÑ…Ñ”¹•¹°É½ÕÑ”¹•¹¤ì(€ÍÑ…Ñ”¹Á±…¹¹•‘1¥¹”€ôµ…À¹É•…Ñ•A½±å±¥¹”¡Á½¥¹ÑÌ°ì½±½Èè€ˆŒÄÄÄÄÄÄˆ°Ý•¥¡Ðè€Ø°½Á…¥Ñäè€À¸äô¤ì(€µ…À¹™¥Ð¡Á½¥¹ÑÌ°€ÌÔ¤ì(€‘…Ñ•%¹ÁÕÐ¹Ù…±Õ”€ôÉ½ÕÑ”¹‘…Ñ”ì(€Ñ¥µ•%¹ÁÕÐ¹Ù…±Õ”€ôÉ½ÕÑ”¹Ñ¥µ”ì(€€ ˆ‘¥ÍÑ…¹”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‘íÉ½ÕÑ”¹‘¥ÍÑ…¹•-´¹Ñ½¥á• Ä¥ô­µ€ì(€€ ˆ‘ÕÉ…Ñ¥½¸ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô€‘íÉ½ÕÑ”¹‘ÕÉ…Ñ¥½¹5¥¹ôµ¥¹€ì(€Í•Ñ5•ÍÍ…” ‰IÕÑ„Á±…¹¥™¥…‘„…É…‘„‘•Í‘”•°¡¥ÍÑ½É¥…°¸ˆ¤ì)ô()™Õ¹Ñ¥½¸‘•±•Ñ•I½ÕÑ”¡¥¤ì(€¥˜€¡ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ü¹É½ÕÑ”¹¥€ôôô¥¤±½Í•M¥µÕ±…Ñ¥½¸ ¤ì(€±½…±MÑ½É…”¹Í•Ñ%Ñ•´¡MQ=I}-d°)M=8¹ÍÑÉ¥¹¥™ä¡•ÑI½ÕÑ•Ì ¤¹™¥±Ñ•È¡É½ÕÑ”€ôøÉ½ÕÑ”¹¥€„ôô¥¤¤¤ì(€É•¹‘•É!¥ÍÑ½Éä ¤ì)ô()™Õ¹Ñ¥½¸•áÁ½ÉÑI½ÕÑ”¡¥°™½Éµ…Ð¤ì(€½¹ÍÐÉ½ÕÑ”€ô•ÑI½ÕÑ•Ì ¤¹™¥¹¡¥Ñ•´€ôø¥Ñ•´¹¥€ôôô¥¤ì(€¥˜€ …É½ÕÑ”¤É•ÑÕÉ¸ì(€ÑÉäì(€€€Ý¥¹‘½Ü¹I½ÕÑ•áÁ½ÉÐ¹‘½Ý¹±½…¡É½ÕÑ”°™½Éµ…Ð¤ì(€€€Í¡½Ý5…Á	…¹¹•È¡•Í…É„€‘í™½Éµ…Ð¹Ñ½UÁÁ•É…Í” ¥ôÁÉ•Á…É…‘„½ÉÉ•Ñ…µ•¹Ñ”¹€°€‰¥¹™¼ˆ°€ÌÔÀÀ¤ì(€ô…Ñ €¡•ÉÉ½È¤ì(€€€Í¡½Ý5…Á	…¹¹•È¡•ÉÉ½È¹µ•ÍÍ…”°€‰Ý…É¹¥¹œˆ°€ÜÀÀÀ¤ì(€ô)ô()™Õ¹Ñ¥½¸•áÁ½ÉÑ5•¹Ô¡É½ÕÑ”¤ì(€É•ÑÕÉ¸€ñ‘•Ñ…¥±Ì±…ÍÌô‰•áÁ½ÉÐµµ•¹Ôˆø(€€€€ñÍÕµµ…Éäù•Í…É…ÈƒŠZøð½ÍÕµµ…Éäø(€€€€ñ‘¥Ø±…ÍÌô‰•áÁ½ÉÐµ½ÁÑ¥½¹Ìˆ…É¥„µ±…‰•°ô‰½Éµ…Ñ½Ì‘”‘•Í…É„ˆø(€€€€€€ñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ‘…Ñ„µ•áÁ½ÉÐôˆ‘íÉ½ÕÑ”¹¥‘ôˆ‘…Ñ„µ™½Éµ…Ðô‰ÍØˆùMXð½‰ÕÑÑ½¸ø(€€€€€€ñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ‘…Ñ„µ•áÁ½ÉÐôˆ‘íÉ½ÕÑ”¹¥‘ôˆ‘…Ñ„µ™½Éµ…Ðô‰­µ°ˆù-50ð½‰ÕÑÑ½¸ø(€€€€€€ñ‰ÕÑÑ½¸ÑåÁ”ô‰‰ÕÑÑ½¸ˆ‘…Ñ„µ•áÁ½ÉÐôˆ‘íÉ½ÕÑ”¹¥‘ôˆ‘…Ñ„µ™½Éµ…Ðô‰Í¡ÀˆùM!@ð½‰ÕÑÑ½¸ø(€€€€ð½‘¥Øø(€€ð½‘•Ñ…¥±Ìù€ì)ô()™Õ¹Ñ¥½¸É•¹‘•É!¥ÍÑ½Éä ¤ì(€½¹ÍÐÉ½ÕÑ•Ì€ô•ÑI½ÕÑ•Ì ¤ì(€€ ˆ¡¥ÍÑ½Éäˆ¤¹¥¹¹•É!Q50€ôÉ½ÕÑ•Ì¹±•¹Ñ €üÉ½ÕÑ•Ì¹µ…À¡É½ÕÑ”€ôøì(€€€¥˜€¡É½ÕÑ”¹ÑåÁ”€ôôô€‰É•½É‘•ˆ¤ì(€€€€€É•ÑÕÉ¸€ñ…ÉÑ¥±”±…ÍÌô‰¡¥ÍÑ½Éäµ…ÉÉ•½É‘•ˆø(€€€€€€€€ñ‘¥Ø±…ÍÌô‰¡¥ÍÑ½Éäµ¡•…‘¥¹œˆøñÍÁ…¸±…ÍÌô‰­¥¹ˆùALð½ÍÁ…¸øñÍÑÉ½¹œø‘í•Í…Á•!Ñµ°¡É½ÕÑ”¹¹…µ”¥ôð½ÍÑÉ½¹œøð½‘¥Øø(€€€€€€€€ñÀ±…ÍÌô‰Ý¡•¸ˆø‘í™½Éµ…Ñ…Ñ•Q¥µ”¡É½ÕÑ”¹ÍÑ…ÉÑ•‘Ð¥ôð½Àø(€€€€€€€€ñÀø‘í™½Éµ…Ñ¥ÍÑ…¹”¡É½ÕÑ”¹‘¥ÍÑ…¹•5•Ñ•ÉÌ¥ôƒ
-Ü€‘í™½Éµ…ÑÕÉ…Ñ¥½¸¡•Ñ±…ÁÍ•‘5¥±±¥Í•½¹‘Ì¡É½ÕÑ”¤¥ôƒ
-Ü€‘íÉ½ÕÑ”¹Á½¥¹ÑÌ¹±•¹Ñ¡ôÁÕ¹Ñ½Ìð½Àø(€€€€€€€€ñ‘¥Ø±…ÍÌô‰…Éµ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸‘…Ñ„µÍ¥µÕ±…Ñ”ôˆ‘íÉ½ÕÑ”¹¥‘ôˆûŠZØM¥µÕ±…Èð½‰ÕÑÑ½¸øñ‰ÕÑÑ½¸‘…Ñ„µÙ¥•ÜµÉ•½É‘•ôˆ‘íÉ½ÕÑ”¹¥‘ôˆùY•È•¸µ…Á„ð½‰ÕÑÑ½¸ø‘í•áÁ½ÉÑ5•¹Ô¡É½ÕÑ”¥ôñ‰ÕÑÑ½¸±…ÍÌô‰‘•±•Ñ”µÉ½ÕÑ”ˆ‘…Ñ„µ‘•±•Ñ”ôˆ‘íÉ½ÕÑ”¹¥‘ôˆù±¥µ¥¹…Èð½‰ÕÑÑ½¸øð½‘¥Øø(€€€€€€ð½…ÉÑ¥±”ù€ì(€€€ô(€€€É•ÑÕÉ¸€ñ…ÉÑ¥±”±…ÍÌô‰¡¥ÍÑ½Éäµ…ÉÁ±…¹¹•ˆø(€€€€€€ñ‘¥Ø±…ÍÌô‰¡¥ÍÑ½Éäµ¡•…‘¥¹œˆøñÍÁ…¸±…ÍÌô‰­¥¹ˆùA18ð½ÍÁ…¸øñÍÑÉ½¹œùIÕÑ„ÁÉ½É…µ…‘„ð½ÍÑÉ½¹œøð½‘¥Øø(€€€€€€ñÀ±…ÍÌô‰Ý¡•¸ˆø‘í¹•Ü…Ñ”¡€‘íÉ½ÕÑ”¹‘…Ñ•õP‘íÉ½ÕÑ”¹Ñ¥µ•õ€¤¹Ñ½1½…±•MÑÉ¥¹œ ‰•Ìµ<ˆ°ì‘…Ñ•MÑå±”è€‰µ•‘¥Õ´ˆ°Ñ¥µ•MÑå±”è€‰Í¡½ÉÐˆô¥ôð½Àø(€€€€€€ñÀøñÍÑÉ½¹œù•Í‘”èð½ÍÑÉ½¹œø€‘í•Í…Á•!Ñµ°¡É½ÕÑ”¹ÍÑ…ÉÐ¥ôð½Àø(€€€€€€ñÀøñÍÑÉ½¹œù!…ÍÑ„èð½ÍÑÉ½¹œø€‘í•Í…Á•!Ñµ°¡É½ÕÑ”¹•¹¥ôð½Àø(€€€€€€ñÀø‘íÉ½ÕÑ”¹‘¥ÍÑ…¹•-´¹Ñ½¥á• Ä¥ô­´ƒ
-Ü€‘íÉ½ÕÑ”¹‘ÕÉ…Ñ¥½¹5¥¹ôµ¥¸…ÁÉ½à¸ð½Àø(€€€€€€€€ñ‘¥Ø±…ÍÌô‰…Éµ…Ñ¥½¹Ìˆøñ‰ÕÑÑ½¸‘…Ñ„µÍ¥µÕ±…Ñ”ôˆ‘íÉ½ÕÑ”¹¥‘ôˆûŠZØM¥µÕ±…Èð½‰ÕÑÑ½¸øñ‰ÕÑÑ½¸‘…Ñ„µÙ¥•ÜµÁ±…¹¹•ôˆ‘íÉ½ÕÑ”¹¥‘ôˆùY•È•¸µ…Á„ð½‰ÕÑÑ½¸ø‘í•áÁ½ÉÑ5•¹Ô¡É½ÕÑ”¥ôñ‰ÕÑÑ½¸±…ÍÌô‰‘•±•Ñ”µÉ½ÕÑ”ˆ‘…Ñ„µ‘•±•Ñ”ôˆ‘íÉ½ÕÑ”¹¥‘ôˆù±¥µ¥¹…Èð½‰ÕÑÑ½¸øð½‘¥Øø(€€€€ð½…ÉÑ¥±”ù€ì(€ô¤¹©½¥¸ ˆˆ¤€è€œñÀ±…ÍÌô‰•µÁÑäˆùQ½‘…Ûµ„¹¼¡…äÉ•½ÉÉ¥‘½ÌÕ…É‘…‘½Ì¸ð½Àøœì((€‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½É±° ‰m‘…Ñ„µÍ¥µÕ±…Ñ•tˆ¤¹™½É… ¡‰ÕÑÑ½¸€ôø‰ÕÑÑ½¸¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôøÍÑ…ÉÑI½ÕÑ•M¥µÕ±…Ñ¥½¸¡9Õµ‰•È¡‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹Í¥µÕ±…Ñ”¤¤¤¤ì(€‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½É±° ‰m‘…Ñ„µÙ¥•ÜµÉ•½É‘•‘tˆ¤¹™½É… ¡‰ÕÑÑ½¸€ôø‰ÕÑÑ½¸¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôøÍ¡½ÝI•½É‘•‘I½ÕÑ”¡9Õµ‰•È¡‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹Ù¥•ÝI•½É‘•¤¤¤¤ì(€‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½É±° ‰m‘…Ñ„µÙ¥•ÜµÁ±…¹¹•‘tˆ¤¹™½É… ¡‰ÕÑÑ½¸€ôø‰ÕÑÑ½¸¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôøÍ¡½ÝA±…¹¹•‘I½ÕÑ”¡9Õµ‰•È¡‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹Ù¥•ÝA±…¹¹•¤¤¤¤ì(€‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½É±° ‰m‘…Ñ„µ•áÁ½ÉÑtˆ¤¹™½É… ¡‰ÕÑÑ½¸€ôø‰ÕÑÑ½¸¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôø•áÁ½ÉÑI½ÕÑ”¡9Õµ‰•È¡‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹•áÁ½ÉÐ¤°‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹™½Éµ…Ð¤¤¤ì(€‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½É±° ‰m‘…Ñ„µ‘•±•Ñ•tˆ¤¹™½É… ¡‰ÕÑÑ½¸€ôø‰ÕÑÑ½¸¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôø‘•±•Ñ•I½ÕÑ”¡9Õµ‰•È¡‰ÕÑÑ½¸¹‘…Ñ…Í•Ð¹‘•±•Ñ”¤¤¤¤ì)ô()™Õ¹Ñ¥½¸‘¥ÍÑ…¹•	•ÑÝ••¸¡™É½´°Ñ¼¤ì(€½¹ÍÐ•…ÉÑ¡I…‘¥ÕÌ€ô€ØÌÜÄÀÀà¸àì(€½¹ÍÐ±…Ñ¥ÑÕ‘”Ä€ô™É½´¹±…Ð€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐ±…Ñ¥ÑÕ‘”È€ôÑ¼¹±…Ð€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐ±…Ñ¥ÑÕ‘••±Ñ„€ô€¡Ñ¼¹±…Ð€´™É½´¹±…Ð¤€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐ±½¹¥ÑÕ‘••±Ñ„€ô€¡Ñ¼¹±¹œ€´™É½´¹±¹œ¤€¨5…Ñ ¹A$€¼€ÄàÀì(€½¹ÍÐÙ…±Õ”€ô5…Ñ ¹Í¥¸¡±…Ñ¥ÑÕ‘••±Ñ„€¼€È¤€¨¨€È€¬5…Ñ ¹½Ì¡±…Ñ¥ÑÕ‘”Ä¤€¨5…Ñ ¹½Ì¡±…Ñ¥ÑÕ‘”È¤€¨5…Ñ ¹Í¥¸¡±½¹¥ÑÕ‘••±Ñ„€¼€È¤€¨¨€Èì(€É•ÑÕÉ¸•…ÉÑ¡I…‘¥ÕÌ€¨€È€¨5…Ñ ¹…Ñ…¸È¡5…Ñ ¹ÍÅÉÐ¡Ù…±Õ”¤°5…Ñ ¹ÍÅÉÐ Ä€´Ù…±Õ”¤¤ì)ô()™Õ¹Ñ¥½¸™½Éµ…Ñ¥ÍÑ…¹”¡µ•Ñ•ÉÌ¤ìÉ•ÑÕÉ¸µ•Ñ•ÉÌ€øô€ÄÀÀÀ€ü€‘ì¡µ•Ñ•ÉÌ€¼€ÄÀÀÀ¤¹Ñ½¥á• È¥ô­µ€€è€‘í5…Ñ ¹É½Õ¹¡µ•Ñ•ÉÌ¥ôµ€ìô)™Õ¹Ñ¥½¸™½Éµ…ÑÕÉ…Ñ¥½¸¡µ¥±±¥Í•½¹‘Ì¤ì(€½¹ÍÐÑ½Ñ…±M•½¹‘Ì€ô5…Ñ ¹™±½½È¡µ¥±±¥Í•½¹‘Ì€¼€ÄÀÀÀ¤ì(€½¹ÍÐ¡½ÕÉÌ€ô5…Ñ ¹™±½½È¡Ñ½Ñ…±M•½¹‘Ì€¼€ÌØÀÀ¤ì(€½¹ÍÐµ¥¹ÕÑ•Ì€ô5…Ñ ¹™±½½È ¡Ñ½Ñ…±M•½¹‘Ì€”€ÌØÀÀ¤€¼€ØÀ¤ì(€½¹ÍÐÍ•½¹‘Ì€ôÑ½Ñ…±M•½¹‘Ì€”€ØÀì(€É•ÑÕÉ¸¡½ÕÉÌ€ü€‘í¡½ÕÉÍôè‘íMÑÉ¥¹œ¡µ¥¹ÕÑ•Ì¤¹Á…‘MÑ…ÉÐ È°€ˆÀˆ¥ôè‘íMÑÉ¥¹œ¡Í•½¹‘Ì¤¹Á…‘MÑ…ÉÐ È°€ˆÀˆ¥õ€€è€‘íMÑÉ¥¹œ¡µ¥¹ÕÑ•Ì¤¹Á…‘MÑ…ÉÐ È°€ˆÀˆ¥ôè‘íMÑÉ¥¹œ¡Í•½¹‘Ì¤¹Á…‘MÑ…ÉÐ È°€ˆÀˆ¥õ€ì)ô)™Õ¹Ñ¥½¸™½Éµ…Ñ…Ñ•Q¥µ”¡Ù…±Õ”¤ìÉ•ÑÕÉ¸¹•Ü…Ñ”¡Ù…±Õ”¤¹Ñ½1½…±•MÑÉ¥¹œ ‰•Ìµ<ˆ°ì‘…Ñ•MÑå±”è€‰µ•‘¥Õ´ˆ°Ñ¥µ•MÑå±”è€‰Í¡½ÉÐˆô¤ìô)™Õ¹Ñ¥½¸•Í…Á•!Ñµ°¡Ù…±Õ”€ô€ˆˆ¤ìÉ•ÑÕÉ¸Ù…±Õ”¹É•Á±…” ½l˜ðøœ‰t½œ°¡…É…Ñ•È€ôø€¡ì€ˆ˜ˆè€ˆ™…µÀìˆ°€ˆðˆè€ˆ™±Ðìˆ°€ˆøˆè€ˆ™Ðìˆ°€ˆœˆè€ˆ˜ŒÌäìˆ°€œˆœè€ˆ™ÅÕ½Ðìˆô¥m¡…É…Ñ•Ét¤ìô(( ˆÉ•Í•Ðˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°É•Í•ÑA±…¹¹•‘A½¥¹ÑÌ¤ì( ˆ±•…Èµ¡¥ÍÑ½Éäˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°€ ¤€ôøì(€¥˜€ …•ÑI½ÕÑ•Ì ¤¹±•¹Ñ ñð½¹™¥É´ ‹
-ý	½ÉÉ…ÈÑ½‘½Ì±½ÌÉ•½ÉÉ¥‘½ÌÕ…É‘…‘½Ì•¸•ÍÑ”‘¥ÍÁ½Í¥Ñ¥Ù¼üˆ¤¤ì(€€€±½…±MÑ½É…”¹É•µ½Ù•%Ñ•´¡MQ=I}-d¤ì(€€€É•¹‘•É!¥ÍÑ½Éä ¤ì(€ô)ô¤ì(( ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°Ñ½±•M¥µÕ±…Ñ¥½¸¤ì( ˆÍ¥µÕ±…Ñ¥½¸µÉ•ÍÑ…ÉÐˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°É•ÍÑ…ÉÑM¥µÕ±…Ñ¥½¸¤ì( ˆÍ¥µÕ±…Ñ¥½¸µ±½Í”ˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±¥¬ˆ°±½Í•M¥µÕ±…Ñ¥½¸¤ì( ˆÍ¥µÕ±…Ñ¥½¸µÍÁ••ˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰¡…¹”ˆ°•Ù•¹Ð€ôøì(€¥˜€¡ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸¤ÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸¹ÍÁ••€ô9Õµ‰•È¡•Ù•¹Ð¹Ñ…É•Ð¹Ù…±Õ”¤ñð€Äì)ô¤ì( ˆÍ¥µÕ±…Ñ¥½¸µÁÉ½É•ÍÌˆ¤¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰¥¹ÁÕÐˆ°•Ù•¹Ð€ôøì(€½¹ÍÐÍ¥µÕ±…Ñ¥½¸€ôÍÑ…Ñ”¹Í¥µÕ±…Ñ¥½¸ì(€¥˜€ …Í¥µÕ±…Ñ¥½¸¤É•ÑÕÉ¸ì(€Í¥µÕ±…Ñ¥½¸¹Á±…å¥¹œ€ô™…±Í”ì(€Í¥µÕ±…Ñ¥½¸¹±…ÍÑÉ…µ•Q¥µ”€ô¹Õ±°ì(€…¹•±¹¥µ…Ñ¥½¹É…µ”¡Í¥µÕ±…Ñ¥½¸¹™É…µ•%¤ì(€½¹ÍÐ™É…Ñ¥½¸€ô9Õµ‰•È¡•Ù•¹Ð¹Ñ…É•Ð¹Ù…±Õ”¤€¼€ÄÀÀÀì(€Í¥µÕ±…Ñ¥½¸¹•±…ÁÍ•‘¹¥µ…Ñ¥½¹5Ì€ôÍ¥µÕ±…Ñ¥½¸¹…¹¥µ…Ñ¥½¹ÕÉ…Ñ¥½¹5Ì€¨™É…Ñ¥½¸ì(€É•¹‘•ÉM¥µÕ±…Ñ¥½¸¡™É…Ñ¥½¸°ÑÉÕ”¤ì(€€ ˆÍ¥µÕ±…Ñ¥½¸µÑ½±”ˆ¤¹Ñ•áÑ½¹Ñ•¹Ð€ô™É…Ñ¥½¸€øô€Ä€ü€‹ŠZØI•Á•Ñ¥Èˆ€è€‹ŠZØ½¹Ñ¥¹Õ…Èˆì)ô¤ì()¥˜€ ‰Í•ÉÙ¥•]½É­•Èˆ¥¸¹…Ù¥…Ñ½È¤Ý¥¹‘½Ü¹…‘‘Ù•¹Ñ1¥ÍÑ•¹•È ‰±½…ˆ°€ ¤€ôø¹…Ù¥…Ñ½È¹Í•ÉÙ¥•]½É­•È¹É•¥ÍÑ•È ‰ÍÜ¹©Ìˆ¤¹…Ñ   ¤€ôøíô¤¤ì)É•ÍÑ½É•Ñ¥Ù•QÉ…¬ ¤ì)É•¹‘•É!¥ÍÑ½Éä ¤ì)ô()¥¹¥ÑÁÀ ¤¹…Ñ ¡•ÉÉ½È€ôøì(€½¹Í½±”¹•ÉÉ½È¡•ÉÉ½È¤ì(€½¹ÍÐ‰…¹¹•È€ô‘½Õµ•¹Ð¹ÅÕ•ÉåM•±•Ñ½È ˆµ…Àµ‰…¹¹•Èˆ¤ì(€¥˜€¡‰…¹¹•È¤ì(€€€‰…¹¹•È¹Ñ•áÑ½¹Ñ•¹Ð€ô€‰9¼™Õ”Á½Í¥‰±”¥¹¥¥…È•°µ…Á„¸I•…É„±„…Á±¥…§Í¸¼É•Ù¥Í„±„½¹•á§Í¸¸ˆì(€€€‰…¹¹•È¹±…ÍÍ9…µ”€ô€‰µ…Àµ‰…¹¹•È•ÉÉ½Èˆì(€€€‰…¹¹•È¹¡¥‘‘•¸€ô™…±Í”ì(€ô)ô¤ì(
+map.on("dragstart", () => { if (state.track?.status === "recording") state.followLocation = false; });
+
+function setMessage(text = "") { message.textContent = text; }
+
+function setPoint(type, latlng, label) {
+  const isStart = type === "start";
+  const markerKey = isStart ? "startMarker" : "endMarker";
+  if (state[markerKey]) map.remove(state[markerKey]);
+  state[type] = { lat: latlng.lat, lng: latlng.lng, label };
+  state[markerKey] = map.createCircleMarker(latlng, {
+    radius: 9,
+    strokeColor: "#ffffff",
+    strokeWeight: 3,
+    fillColor: isStart ? "#111111" : "#e30613",
+    fillOpacity: 1,
+    title: isStart ? "Punto de partida" : "Punto final"
+  });
+  (isStart ? startInput : endInput).value = label;
+}
+
+map.on("click", latlng => {
+  if (state.mode !== "plan") return;
+  const type = !state.start || state.end ? "start" : "end";
+  if (type === "start" && state.end) resetPlannedPoints();
+  setPoint(type, latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`);
+  setMessage(type === "start" ? "Ahora selecciona el punto final." : "Puntos listos para calcular.");
+});
+
+async function searchPlace(type) {
+  const input = type === "start" ? startInput : endInput;
+  const query = input.value.trim();
+  if (!query) return setMessage("Escribe una direcciÃ³n para buscarla.");
+  setMessage("Buscando ubicaciÃ³nâ€¦");
+  try {
+    let googleResult = null;
+    try { googleResult = await map.geocode(query); } catch { /* Usa el buscador de respaldo. */ }
+    if (googleResult) {
+      setPoint(type, googleResult.point, googleResult.label);
+      map.setView(googleResult.point, 15);
+      setMessage("UbicaciÃ³n encontrada con Google Maps.");
+      return;
+    }
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, { headers: { "Accept-Language": "es" } });
+    if (!response.ok) throw new Error();
+    const [result] = await response.json();
+    if (!result) return setMessage("No encontramos esa ubicaciÃ³n. Intenta ser mÃ¡s especÃ­fico.");
+    const latlng = { lat: Number(result.lat), lng: Number(result.lon) };
+    setPoint(type, latlng, result.display_name);
+    map.setView(latlng, 15);
+    setMessage("UbicaciÃ³n encontrada.");
+  } catch { setMessage("No fue posible consultar la ubicaciÃ³n. Revisa tu conexiÃ³n."); }
+}
+
+document.querySelectorAll("[data-search]").forEach(button => button.addEventListener("click", () => searchPlace(button.dataset.search)));
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!state.start || !state.end) return setMessage("Busca o selecciona en el mapa los dos puntos.");
+  calculateButton.disabled = true;
+  setMessage("Calculando la mejor rutaâ€¦");
+  try {
+    const coords = `${state.start.lng},${state.start.lat};${state.end.lng},${state.end.lat}`;
+    const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    const route = data.routes?.[0];
+    if (!route) throw new Error();
+    if (state.plannedLine) map.remove(state.plannedLine);
+    const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
+    map.fit(points, 35);
+    const distanceKm = route.distance / 1000;
+    const durationMin = Math.round(route.duration / 60);
+    $("#distance").textContent = `${distanceKm.toFixed(1)} km`;
+    $("#duration").textContent = durationMin >= 60 ? `${Math.floor(durationMin / 60)} h ${durationMin % 60} min` : `${durationMin} min`;
+    saveRoute({
+      id: Date.now(),
+      type: "planned",
+      start: state.start.label,
+      end: state.end.label,
+      date: dateInput.value,
+      time: timeInput.value,
+      distanceKm,
+      distanceMeters: route.distance,
+      durationMin,
+      durationMilliseconds: route.duration * 1000,
+      points
+    });
+    setMessage("Ruta calculada y guardada.");
+  } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
+  finally { calculateButton.disabled = false; }
+});
+
+function resetPlannedPoints() {
+  ["startMarker", "endMarker", "plannedLine"].forEach(key => {
+    if (state[key]) map.remove(state[key]);
+    state[key] = null;
+  });
+  state.start = null;
+  state.end = null;
+  startInput.value = "";
+  endInput.value = "";
+  $("#distance").textContent = "â€”";
+  $("#duration").textContent = "â€”";
+  setMessage("");
+}
+
+function getRoutes() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+}
+
+function saveRoute(route) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([route, ...getRoutes()].slice(0, 20)));
+  renderHistory();
+}
+
+function vehicleMarkerOptions() {
+  return {
+    className: "vehicle-icon-shell",
+    size: 44,
+    zIndex: 1000,
+    html: `<div class="vehicle-marker" aria-label="VehÃ­culo de la simulaciÃ³n">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="13" y="5" width="22" height="38" rx="8" fill="#e30613" stroke="#fff" stroke-width="2"/>
+        <path d="M17 16h14l-2-7H19z" fill="#202020"/>
+        <path d="M17 29h14v7H17z" fill="#fff" opacity=".92"/>
+        <rect x="9" y="13" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="34" y="13" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="9" y="29" width="5" height="10" rx="2" fill="#111"/>
+        <rect x="34" y="29" width="5" height="10" rx="2" fill="#111"/>
+      </svg>
+    </div>`
+  };
+}
+
+function startRouteSimulation(id) {
+  if (state.track?.status === "recording") {
+    showMapBanner("Finaliza o pausa la captura actual antes de iniciar una simulaciÃ³n.", "warning");
+    return;
+  }
+
+  const route = getRoutes().find(item => item.id === id);
+  const points = window.RouteExport.routePoints(route);
+  if (!route || points.length < 2) {
+    showMapBanner("Esta ruta no contiene suficientes coordenadas para simularla. Vuelve a calcularla si fue creada en una versiÃ³n anterior.", "warning", 7000);
+    return;
+  }
+
+  closeSimulation();
+  setMode(route.type === "planned" ? "plan" : "capture");
+  if (route.type === "recorded") {
+    clearCaptureLayers();
+    state.track = route;
+  } else {
+    resetPlannedPoints();
+  }
+
+  const latlngs = points.map(point => ({ lat: point.lat, lng: point.lng }));
+  const cumulativeDistances = [0];
+  for (let index = 1; index < latlngs.length; index += 1) {
+    cumulativeDistances.push(cumulativeDistances[index - 1] + distanceBetween(latlngs[index - 1], latlngs[index]));
+  }
+
+  const originalDurationMs = Math.max(1000, route.type === "recorded" ? getElapsedMilliseconds(route) : (route.durationMilliseconds || route.durationMin * 60000));
+  const animationDurationMs = Math.min(
+    SIMULATION_MAX_DURATION_MS,
+    Math.max(SIMULATION_MIN_DURATION_MS, originalDurationMs / SIMULATION_COMPRESSION)
+  );
+  const pendingLine = map.createPolyline(latlngs, { color: "#777777", weight: 6, opacity: 0.48, dashArray: "8 8" });
+  const completedLine = map.createPolyline([latlngs[0]], { color: "#e30613", weight: 7, opacity: 0.98 });
+  const marker = map.createHtmlMarker(latlngs[0], vehicleMarkerOptions());
+
+  state.simulation = {
+    route,
+    points,
+    latlngs,
+    cumulativeDistances,
+    geometryDistance: cumulativeDistances.at(-1),
+    originalDurationMs,
+    animationDurationMs,
+    elapsedAnimationMs: 0,
+    speed: Number($("#simulation-speed").value) || 1,
+    playing: true,
+    lastFrameTime: null,
+    lastPanTime: 0,
+    frameId: null,
+    pendingLine,
+    completedLine,
+    marker
+  };
+
+  const simulationName = route.type === "recorded" ? route.name : `${route.start} â†’ ${route.end}`;
+  $("#simulation-title").textContent = simulationName;
+  $("#simulation-panel").hidden = false;
+  $("#simulation-toggle").textContent = "âšâš Pausar";
+  $("#simulation-progress").value = "0";
+  $("#simulation-speed").value = "1";
+  state.simulation.speed = 1;
+  if (route.type === "recorded") setGpsStatus("Simulando recorrido", simulationName, "good");
+  else setMessage("Simulando la ruta planificada.");
+  map.fit(latlngs, 55);
+  renderSimulation(0, false);
+  state.simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function simulationFrame(timestamp) {
+  const simulation = state.simulation;
+  if (!simulation?.playing) return;
+  if (simulation.lastFrameTime === null) simulation.lastFrameTime = timestamp;
+  const delta = timestamp - simulation.lastFrameTime;
+  simulation.lastFrameTime = timestamp;
+  simulation.elapsedAnimationMs = Math.min(
+    simulation.animationDurationMs,
+    simulation.elapsedAnimationMs + delta * simulation.speed
+  );
+  const fraction = simulation.elapsedAnimationMs / simulation.animationDurationMs;
+  renderSimulation(fraction, timestamp - simulation.lastPanTime > 450);
+  if (timestamp - simulation.lastPanTime > 450) simulation.lastPanTime = timestamp;
+
+  if (fraction >= 1) {
+    simulation.playing = false;
+    simulation.lastFrameTime = null;
+    $("#simulation-toggle").textContent = "â–¶ Repetir";
+    if (simulation.route.type === "recorded") setGpsStatus("SimulaciÃ³n finalizada", simulation.route.name, "good");
+    else setMessage("SimulaciÃ³n de la ruta planificada finalizada.");
+    return;
+  }
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function renderSimulation(fraction, followVehicle = true) {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  const safeFraction = Math.min(1, Math.max(0, fraction));
+  let segmentIndex = 0;
+  let segmentFraction = 0;
+
+  if (simulation.geometryDistance > 0) {
+    const targetDistance = simulation.geometryDistance * safeFraction;
+    while (
+      segmentIndex < simulation.cumulativeDistances.length - 2 &&
+      simulation.cumulativeDistances[segmentIndex + 1] < targetDistance
+    ) segmentIndex += 1;
+    const segmentStart = simulation.cumulativeDistances[segmentIndex];
+    const segmentLength = simulation.cumulativeDistances[segmentIndex + 1] - segmentStart;
+    segmentFraction = segmentLength ? (targetDistance - segmentStart) / segmentLength : 0;
+  } else {
+    const scaledIndex = safeFraction * (simulation.latlngs.length - 1);
+    segmentIndex = Math.min(simulation.latlngs.length - 2, Math.floor(scaledIndex));
+    segmentFraction = scaledIndex - segmentIndex;
+  }
+
+  const from = simulation.latlngs[segmentIndex];
+  const to = simulation.latlngs[segmentIndex + 1];
+  const current = {
+    lat: from.lat + (to.lat - from.lat) * segmentFraction,
+    lng: from.lng + (to.lng - from.lng) * segmentFraction
+  };
+  const completedPoints = simulation.latlngs.slice(0, segmentIndex + 1).concat(current);
+  const pendingPoints = [current].concat(simulation.latlngs.slice(segmentIndex + 1));
+  simulation.completedLine.setPoints(completedPoints);
+  simulation.pendingLine.setPoints(pendingPoints);
+  simulation.marker.setPosition(current);
+
+  const vehicle = simulation.marker.getElement()?.querySelector(".vehicle-marker");
+  if (vehicle) vehicle.style.setProperty("--vehicle-rotation", `${bearingBetween(from, to)}deg`);
+  if (followVehicle) map.panTo(current);
+
+  const simulatedDuration = simulation.originalDurationMs * safeFraction;
+  const routeDistance = simulation.route.distanceMeters || (simulation.route.distanceKm * 1000) || simulation.geometryDistance;
+  $("#simulation-progress").value = String(Math.round(safeFraction * 1000));
+  $("#simulation-time").textContent = `${formatDuration(simulatedDuration)} / ${formatDuration(simulation.originalDurationMs)}`;
+  $("#simulation-distance").textContent = `${formatDistance(routeDistance * safeFraction)} / ${formatDistance(routeDistance)}`;
+}
+
+function bearingBetween(from, to) {
+  const startLat = from.lat * Math.PI / 180;
+  const endLat = to.lat * Math.PI / 180;
+  const longitudeDelta = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(longitudeDelta) * Math.cos(endLat);
+  const x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(longitudeDelta);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function toggleSimulation() {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  if (simulation.playing) {
+    simulation.playing = false;
+    simulation.lastFrameTime = null;
+    cancelAnimationFrame(simulation.frameId);
+    $("#simulation-toggle").textContent = "â–¶ Continuar";
+    return;
+  }
+  if (simulation.elapsedAnimationMs >= simulation.animationDurationMs) {
+    simulation.elapsedAnimationMs = 0;
+    renderSimulation(0, true);
+  }
+  simulation.playing = true;
+  simulation.lastFrameTime = null;
+  $("#simulation-toggle").textContent = "âšâš Pausar";
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function restartSimulation() {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  cancelAnimationFrame(simulation.frameId);
+  simulation.elapsedAnimationMs = 0;
+  simulation.lastFrameTime = null;
+  simulation.playing = true;
+  renderSimulation(0, true);
+  $("#simulation-toggle").textContent = "âšâš Pausar";
+  simulation.frameId = requestAnimationFrame(simulationFrame);
+}
+
+function closeSimulation() {
+  const simulation = state.simulation;
+  if (simulation) {
+    cancelAnimationFrame(simulation.frameId);
+    [simulation.pendingLine, simulation.completedLine, simulation.marker].forEach(layer => {
+      if (layer && map.contains(layer)) map.remove(layer);
+    });
+  }
+  state.simulation = null;
+  const panel = $("#simulation-panel");
+  if (panel) panel.hidden = true;
+}
+
+function showRecordedRoute(id) {
+  const route = getRoutes().find(item => item.id === id && item.type === "recorded");
+  if (!route) return;
+  closeSimulation();
+  setMode("capture");
+  clearCaptureLayers();
+  state.track = route;
+  state.trackLine.setPoints(route.points);
+  if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
+  $("#live-distance").textContent = formatDistance(route.distanceMeters);
+  $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(route));
+  $("#live-points").textContent = route.points.length;
+  setGpsStatus("Recorrido guardado", route.name, "good");
+  startCaptureButton.disabled = false;
+  startCaptureButton.querySelector("span:last-child").textContent = "Iniciar otro recorrido";
+}
+
+function showPlannedRoute(id) {
+  const route = getRoutes().find(item => item.id === id && item.type === "planned");
+  const points = window.RouteExport.routePoints(route);
+  if (!route || points.length < 2) {
+    showMapBanner("Esta ruta planificada es antigua y no tiene coordenadas guardadas. CalcÃºlala nuevamente.", "warning", 7000);
+    return;
+  }
+  closeSimulation();
+  setMode("plan");
+  resetPlannedPoints();
+  state.start = { ...points[0], label: route.start };
+  state.end = { ...points.at(-1), label: route.end };
+  setPoint("start", state.start, route.start);
+  setPoint("end", state.end, route.end);
+  state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
+  map.fit(points, 35);
+  dateInput.value = route.date;
+  timeInput.value = route.time;
+  $("#distance").textContent = `${route.distanceKm.toFixed(1)} km`;
+  $("#duration").textContent = `${route.durationMin} min`;
+  setMessage("Ruta planificada cargada desde el historial.");
+}
+
+function deleteRoute(id) {
+  if (state.simulation?.route.id === id) closeSimulation();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
+  renderHistory();
+}
+
+function exportRoute(id, format) {
+  const route = getRoutes().find(item => item.id === id);
+  if (!route) return;
+  try {
+    window.RouteExport.download(route, format);
+    showMapBanner(`Descarga ${format.toUpperCase()} preparada correctamente.`, "info", 3500);
+  } catch (error) {
+    showMapBanner(error.message, "warning", 7000);
+  }
+}
+
+function exportMenu(route) {
+  return `<details class="export-menu">
+    <summary>Descargar â–¾</summary>
+    <div class="export-options" aria-label="Formatos de descarga">
+      <button type="button" data-export="${route.id}" data-format="csv">CSV</button>
+      <button type="button" data-export="${route.id}" data-format="kml">KML</button>
+      <button type="button" data-export="${route.id}" data-format="shp">SHP</button>
+    </div>
+  </details>`;
+}
+
+function renderHistory() {
+  const routes = getRoutes();
+  $("#history").innerHTML = routes.length ? routes.map(route => {
+    if (route.type === "recorded") {
+      return `<article class="history-card recorded">
+        <div class="history-heading"><span class="kind">GPS</span><strong>${escapeHtml(route.name)}</strong></div>
+        <p class="when">${formatDateTime(route.startedAt)}</p>
+        <p>${formatDistance(route.distanceMeters)} Â· ${formatDuration(getElapsedMilliseconds(route))} Â· ${route.points.length} puntos</p>
+        <div class="card-actions"><button data-simulate="${route.id}">â–¶ Simular</button><button data-view-recorded="${route.id}">Ver en mapa</button>${exportMenu(route)}<button class="delete-route" data-delete="${route.id}">Eliminar</button></div>
+      </article>`;
+    }
+    return `<article class="history-card planned">
+      <div class="history-heading"><span class="kind">PLAN</span><strong>Ruta programada</strong></div>
+      <p class="when">${new Date(`${route.date}T${route.time}`).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}</p>
+      <p><strong>Desde:</strong> ${escapeHtml(route.start)}</p>
+      <p><strong>Hasta:</strong> ${escapeHtml(route.end)}</p>
+      <p>${route.distanceKm.toFixed(1)} km Â· ${route.durationMin} min aprox.</p>
+        <div class="card-actions"><button data-simulate="${route.id}">â–¶ Simular</button><button data-view-planned="${route.id}">Ver en mapa</button>${exportMenu(route)}<button class="delete-route" data-delete="${route.id}">Eliminar</button></div>
+    </article>`;
+  }).join("") : '<p class="empty">TodavÃ­a no hay recorridos guardados.</p>';
+
+  document.querySelectorAll("[data-simulate]").forEach(button => button.addEventListener("click", () => startRouteSimulation(Number(button.dataset.simulate))));
+  document.querySelectorAll("[data-view-recorded]").forEach(button => button.addEventListener("click", () => showRecordedRoute(Number(button.dataset.viewRecorded))));
+  document.querySelectorAll("[data-view-planned]").forEach(button => button.addEventListener("click", () => showPlannedRoute(Number(button.dataset.viewPlanned))));
+  document.querySelectorAll("[data-export]").forEach(button => button.addEventListener("click", () => exportRoute(Number(button.dataset.export), button.dataset.format)));
+  document.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", () => deleteRoute(Number(button.dataset.delete))));
+}
+
+function distanceBetween(from, to) {
+  const earthRadius = 6371008.8;
+  const latitude1 = from.lat * Math.PI / 180;
+  const latitude2 = to.lat * Math.PI / 180;
+  const latitudeDelta = (to.lat - from.lat) * Math.PI / 180;
+  const longitudeDelta = (to.lng - from.lng) * Math.PI / 180;
+  const value = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(latitude1) * Math.cos(latitude2) * Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
+
+function formatDistance(meters) { return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`; }
+function formatDuration(milliseconds) {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+function formatDateTime(value) { return new Date(value).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }); }
+function escapeHtml(value = "") { return value.replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
+
+$("#reset").addEventListener("click", resetPlannedPoints);
+$("#clear-history").addEventListener("click", () => {
+  if (!getRoutes().length || confirm("Â¿Borrar todos los recorridos guardados en este dispositivo?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderHistory();
+  }
+});
+
+$("#simulation-toggle").addEventListener("click", toggleSimulation);
+$("#simulation-restart").addEventListener("click", restartSimulation);
+$("#simulation-close").addEventListener("click", closeSimulation);
+$("#simulation-speed").addEventListener("change", event => {
+  if (state.simulation) state.simulation.speed = Number(event.target.value) || 1;
+});
+$("#simulation-progress").addEventListener("input", event => {
+  const simulation = state.simulation;
+  if (!simulation) return;
+  simulation.playing = false;
+  simulation.lastFrameTime = null;
+  cancelAnimationFrame(simulation.frameId);
+  const fraction = Number(event.target.value) / 1000;
+  simulation.elapsedAnimationMs = simulation.animationDurationMs * fraction;
+  renderSimulation(fraction, true);
+  $("#simulation-toggle").textContent = fraction >= 1 ? "â–¶ Repetir" : "â–¶ Continuar";
+});
+
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+restoreActiveTrack();
+renderHistory();
+}
+
+initApp().catch(error => {
+  console.error(error);
+  const banner = document.querySelector("#map-banner");
+  if (banner) {
+    banner.textContent = "No fue posible iniciar el mapa. Recarga la aplicaciÃ³n o revisa la conexiÃ³n.";
+    banner.className = "map-banner error";
+    banner.hidden = false;
+  }
+});
