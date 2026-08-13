@@ -15,6 +15,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Créditos siempre visibles en la versión de escritorio y camión de simulación reducido para no ocultar el mapa.
 - Adición directa de puntos obligatorios tocando el mapa después del origen y el destino, manteniendo su orden de selección.
 - Camión de simulación reducido nuevamente a un tercio de su tamaño anterior.
+- Panel compacto y desplegable en el lado izquierdo del mapa con distancia y tiempo estimado para cada tramo entre origen, puntos obligatorios y destino.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.

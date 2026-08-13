@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <main class="app-shell">
@@ -131,10 +131,21 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=14" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=15" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
+      <section id="route-segments-panel" class="route-segments-panel" hidden aria-label="Distancia y tiempo por tramos de la ruta">
+        <button id="route-segments-toggle" class="route-segments-toggle" type="button" aria-controls="route-segments-body" aria-expanded="false">
+          <span class="route-segments-heading">TRAMOS</span>
+          <strong id="route-segments-count">0 tramos</strong>
+          <span class="route-segments-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div id="route-segments-body" class="route-segments-body" hidden>
+          <p>Distancia y tiempo estimado de punto a punto.</p>
+          <div id="route-segments-list" class="route-segments-list"></div>
+        </div>
+      </section>
       <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚛 Ver camión y controles</button>
       <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles del camión de basuras">
         <header class="simulation-heading">
@@ -192,8 +203,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=14"></script>
-  <script src="route-export.js?v=14"></script>
-  <script src="app.js?v=14"></script>
+  <script src="map-engine.js?v=15"></script>
+  <script src="route-export.js?v=15"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
