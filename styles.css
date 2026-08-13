@@ -104,6 +104,10 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .export-options { position: absolute; z-index: 20; top: calc(100% + 5px); left: 0; display: flex; gap: 4px; padding: 6px; border: 1px solid var(--gray-300); border-radius: 7px; background: var(--white); box-shadow: 0 8px 20px #00000022; }
 .export-options button { min-width: 42px; color: var(--white) !important; background: var(--black) !important; }
 .empty { color: var(--gray-500); font-size: .8rem; }
+.app-credits { margin-top: 22px; padding: 16px 0 2px; border-top: 1px solid var(--gray-300); text-align: center; }
+.app-credits > span { color: var(--upc-red); font-size: .62rem; font-weight: 850; letter-spacing: .13em; }
+.app-credits p { margin: 6px auto 0; max-width: 390px; color: var(--gray-700); font-size: .7rem; line-height: 1.55; }
+.app-credits strong { color: var(--black); font-weight: 780; }
 
 .map-shell { position: relative; min-width: 0; }
 #map { height: 100dvh; background: #dedede; }

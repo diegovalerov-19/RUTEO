@@ -507,8 +507,8 @@ function vehicleMarkerOptions() {
     className: "vehicle-icon-shell",
     size: 68,
     zIndex: 1000,
-    html: `<div class="vehicle-marker" aria-label="Camión recolector de la simulación">
-      <img src="garbage-truck-marker.png?v=11" alt="" aria-hidden="true">
+    html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
+      <img src="garbage-truck-marker.png?v=12" alt="" aria-hidden="true">
     </div>`
   };
 }

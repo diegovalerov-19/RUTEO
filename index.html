@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <main class="app-shell">
@@ -108,19 +108,24 @@
         </div>
         <div id="history" class="history"></div>
       </section>
+
+      <footer class="app-credits" aria-label="Créditos de desarrollo">
+        <span>CRÉDITOS</span>
+        <p>Desarrollada por <strong>Diego Alfonso Valero</strong>, <strong>Juan Diego Calderon</strong> y <strong>Jorge Esteban Sora</strong>.</p>
+      </footer>
     </aside>
 
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=11" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=12" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
-      <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚛 Ver controles</button>
-      <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles de simulación del recorrido">
+      <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚛 Ver camión y controles</button>
+      <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles del camión de basuras">
         <header class="simulation-heading">
-          <span>SIMULACIÓN</span>
+          <span>CAMIÓN DE BASURAS</span>
           <div class="simulation-heading-actions">
             <button id="simulation-details-toggle" type="button" aria-controls="simulation-description" aria-expanded="false" aria-label="Mostrar descripción del recorrido">ⓘ</button>
             <button id="simulation-hide" type="button" aria-label="Ocultar controles de simulación">−</button>
@@ -174,8 +179,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=11"></script>
-  <script src="route-export.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="map-engine.js?v=12"></script>
+  <script src="route-export.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
