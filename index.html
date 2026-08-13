@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <main class="app-shell">
@@ -113,14 +113,14 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=9" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=10" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
       <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚗 Ver controles</button>
       <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles de simulación del recorrido">
         <header class="simulation-heading">
-          <span>SIMULACIÓN EN CURSO</span>
+          <span>SIMULACIÓN</span>
           <div class="simulation-heading-actions">
             <button id="simulation-details-toggle" type="button" aria-controls="simulation-description" aria-expanded="false" aria-label="Mostrar descripción del recorrido">ⓘ</button>
             <button id="simulation-hide" type="button" aria-label="Ocultar controles de simulación">−</button>
@@ -136,8 +136,10 @@
         </div>
         <input id="simulation-progress" class="simulation-progress" type="range" min="0" max="1000" value="0" aria-label="Progreso de la simulación">
         <div class="simulation-actions">
-          <button id="simulation-toggle" class="simulation-primary" type="button">❚❚ Pausar</button>
+          <button id="simulation-play" class="simulation-primary" type="button">▶ Iniciar</button>
+          <button id="simulation-pause" type="button">❚❚ Pausar</button>
           <button id="simulation-restart" type="button">↺ Reiniciar</button>
+          <button id="simulation-locate" type="button">◎ Mi ubicación</button>
           <label for="simulation-speed">Velocidad
             <select id="simulation-speed">
               <option value="1">1×</option>
@@ -172,8 +174,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=9"></script>
-  <script src="route-export.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="map-engine.js?v=10"></script>
+  <script src="route-export.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
