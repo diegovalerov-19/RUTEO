@@ -43,7 +43,8 @@ const state = {
   captureEndMarker: null,
   timerId: null,
   followLocation: true,
-  simulation: null
+  simulation: null,
+  routeSegments: []
 };
 
 const $ = selector => document.querySelector(selector);
@@ -69,7 +70,10 @@ function setMode(mode) {
     showMapBanner("Finaliza o pausa el recorrido antes de cambiar de modo.", "warning");
     return;
   }
-  if (state.mode !== mode) closeSimulation();
+  if (state.mode !== mode) {
+    closeSimulation();
+    hideRouteSegments();
+  }
   state.mode = mode;
   document.querySelectorAll(".mode-tab").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
   $("#capture-mode").hidden = mode !== "capture";
@@ -86,6 +90,56 @@ function showMapBanner(text, type = "info", duration = 4500) {
   banner.hidden = false;
   clearTimeout(showMapBanner.timer);
   if (duration) showMapBanner.timer = setTimeout(() => { banner.hidden = true; }, duration);
+}
+
+function setRouteSegmentsExpanded(expanded) {
+  const panel = $("#route-segments-panel");
+  const body = $("#route-segments-body");
+  const toggle = $("#route-segments-toggle");
+  panel.classList.toggle("expanded", expanded);
+  body.hidden = !expanded;
+  toggle.setAttribute("aria-expanded", String(expanded));
+  if (expanded && state.simulation) setSimulationPanelVisible(false);
+}
+
+function hideRouteSegments() {
+  state.routeSegments = [];
+  setRouteSegmentsExpanded(false);
+  $("#route-segments-panel").hidden = true;
+}
+
+function showRouteSegments(segments) {
+  const cleanSegments = (Array.isArray(segments) ? segments : []).filter(segment => Number.isFinite(Number(segment.distanceMeters)) && Number.isFinite(Number(segment.durationSeconds)));
+  if (!cleanSegments.length) {
+    hideRouteSegments();
+    return;
+  }
+
+  state.routeSegments = cleanSegments;
+  $("#route-segments-list").innerHTML = cleanSegments.map((segment, index) => `<article class="route-segment">
+    <div class="route-segment-name" title="${escapeHtml(`${String(segment.from)} → ${String(segment.to)}`)}">
+      <span class="route-segment-number">${index + 1}</span>
+      <span>${escapeHtml(String(segment.from))} → ${escapeHtml(String(segment.to))}</span>
+    </div>
+    <div class="route-segment-metrics">
+      <span><small>Distancia</small><strong>${formatDistance(Number(segment.distanceMeters))}</strong></span>
+      <span><small>Tiempo</small><strong>${formatSegmentDuration(Number(segment.durationSeconds))}</strong></span>
+    </div>
+  </article>`).join("");
+  $("#route-segments-count").textContent = `${cleanSegments.length} ${cleanSegments.length === 1 ? "tramo" : "tramos"}`;
+  $("#route-segments-panel").hidden = false;
+  setRouteSegmentsExpanded(false);
+}
+
+function segmentsForRoute(route) {
+  if (!route) return [];
+  if (Array.isArray(route.segments) && route.segments.length) return route.segments;
+  const recorded = route.type === "recorded";
+  const distanceMeters = Number(route.distanceMeters ?? (route.distanceKm * 1000));
+  const durationMilliseconds = recorded ? getElapsedMilliseconds(route) : (route.durationMilliseconds ?? (route.durationMin * 60000));
+  const durationSeconds = Number(durationMilliseconds / 1000);
+  if (!Number.isFinite(distanceMeters) || !Number.isFinite(durationSeconds)) return [];
+  return [{ from: recorded ? "Inicio" : "Origen", to: recorded ? "Fin" : "Destino", distanceMeters, durationSeconds }];
 }
 
 function setupMapProviderSettings() {
@@ -156,6 +210,7 @@ async function startCapture() {
 
   stopWatchingPosition();
   closeSimulation();
+  hideRouteSegments();
 
   if (!state.track || state.track.status === "finished") {
     clearCaptureLayers();
@@ -306,6 +361,7 @@ function finishCapture() {
   clearInterval(state.timerId);
   releaseWakeLock();
   if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
+  showRouteSegments(segmentsForRoute(state.track));
 }
 
 function stopWatchingPosition() {
@@ -583,6 +639,13 @@ form.addEventListener("submit", async event => {
     const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
     state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
     map.fit(points, 35);
+    const stopNames = ["Origen", ...state.waypoints.map((_, index) => `Punto ${index + 1}`), "Destino"];
+    const segments = (route.legs || []).map((leg, index) => ({
+      from: stopNames[index] || `Punto ${index}`,
+      to: stopNames[index + 1] || `Punto ${index + 1}`,
+      distanceMeters: leg.distance,
+      durationSeconds: leg.duration
+    }));
     const distanceKm = route.distance / 1000;
     const durationMin = Math.round(route.duration / 60);
     $("#distance").textContent = `${distanceKm.toFixed(1)} km`;
@@ -599,8 +662,10 @@ form.addEventListener("submit", async event => {
       durationMin,
       durationMilliseconds: route.duration * 1000,
       waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
+      segments,
       points
     });
+    showRouteSegments(segments);
     setMessage(state.waypoints.length ? `Ruta calculada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.` : "Ruta calculada y guardada.");
   } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
   finally { calculateButton.disabled = false; }
@@ -621,6 +686,7 @@ function resetPlannedPoints() {
   endInput.value = "";
   $("#distance").textContent = "—";
   $("#duration").textContent = "—";
+  hideRouteSegments();
   setMessage("");
 }
 
@@ -639,7 +705,7 @@ function vehicleMarkerOptions() {
     size: 13,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=14" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=15" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -699,6 +765,8 @@ function startRouteSimulation(id) {
     completedLine,
     marker
   };
+
+  showRouteSegments(segmentsForRoute(route));
 
   const simulationName = route.type === "recorded" ? route.name : `${route.start} → ${route.end}`;
   $("#simulation-title").textContent = simulationName;
@@ -883,6 +951,7 @@ function setSimulationPanelVisible(visible) {
   panel.hidden = !visible;
   showButton.hidden = visible || !state.simulation;
   showButton.setAttribute("aria-expanded", String(visible));
+  if (visible) setRouteSegmentsExpanded(false);
 }
 
 function setSimulationDetailsVisible(visible) {
@@ -944,6 +1013,7 @@ function showRecordedRoute(id) {
   setGpsStatus("Recorrido guardado", route.name, "good");
   startCaptureButton.disabled = false;
   startCaptureButton.querySelector("span:last-child").textContent = "Iniciar otro recorrido";
+  showRouteSegments(segmentsForRoute(route));
 }
 
 function showPlannedRoute(id) {
@@ -974,11 +1044,13 @@ function showPlannedRoute(id) {
   timeInput.value = route.time;
   $("#distance").textContent = `${route.distanceKm.toFixed(1)} km`;
   $("#duration").textContent = `${route.durationMin} min`;
+  showRouteSegments(segmentsForRoute(route));
   setMessage("Ruta planificada cargada desde el historial.");
 }
 
 function deleteRoute(id) {
   if (state.simulation?.route.id === id) closeSimulation();
+  hideRouteSegments();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
   renderHistory();
 }
@@ -1045,6 +1117,10 @@ function distanceBetween(from, to) {
 }
 
 function formatDistance(meters) { return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`; }
+function formatSegmentDuration(seconds) {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
+}
 function formatDuration(milliseconds) {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -1060,6 +1136,7 @@ $("#reset").addEventListener("click", resetPlannedPoints);
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
+    hideRouteSegments();
     renderHistory();
   }
 });
@@ -1069,6 +1146,9 @@ $("#simulation-pause").addEventListener("click", pauseSimulation);
 $("#simulation-restart").addEventListener("click", restartSimulation);
 $("#simulation-locate").addEventListener("click", locateSimulationUser);
 $("#simulation-show").addEventListener("click", () => setSimulationPanelVisible(true));
+$("#route-segments-toggle").addEventListener("click", event => {
+  setRouteSegmentsExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
   setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
