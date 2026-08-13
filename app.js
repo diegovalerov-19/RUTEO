@@ -522,6 +522,38 @@ function selectPointOnMap(type) {
   scrollToSimulationMap();
 }
 
+function useCurrentLocation(type) {
+  const button = document.querySelector(`[data-current-location="${type}"]`);
+  if (!navigator.geolocation) {
+    setMessage("Este navegador o dispositivo no permite consultar la ubicación.");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "…";
+  setMessage("Buscando tu ubicación actual… Acepta el permiso de ubicación del navegador.");
+  navigator.geolocation.getCurrentPosition(position => {
+    const point = { lat: position.coords.latitude, lng: position.coords.longitude };
+    const label = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+    setPoint(type, point, label);
+    state.pointSelectionType = null;
+    state.waypointSelectionId = null;
+    map.setView(point, Math.max(map.getZoom(), 17));
+    button.disabled = false;
+    button.textContent = "GPS";
+    setMessage(`Tu ubicación actual se estableció como ${type === "start" ? "punto de partida" : "punto final"}.`);
+  }, error => {
+    const messages = {
+      1: "Debes permitir el acceso a la ubicación para usar este botón.",
+      2: "No fue posible encontrar tu ubicación. Activa el GPS del dispositivo.",
+      3: "La ubicación tardó demasiado. Intenta nuevamente en un lugar abierto."
+    };
+    button.disabled = false;
+    button.textContent = "GPS";
+    setMessage(messages[error.code] || "No fue posible consultar tu ubicación actual.");
+  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+}
+
 function addWaypoint(point = null, label = "", selectOnMap = true) {
   if (state.waypoints.length >= 8) return setMessage("Puedes agregar hasta 8 puntos obligatorios por ruta.");
   const waypoint = { id: String(++waypointSequence), point, label, marker: null };
@@ -652,6 +684,7 @@ async function searchPlace(type, waypointId = null) {
 
 document.querySelectorAll("[data-search]").forEach(button => button.addEventListener("click", () => searchPlace(button.dataset.search)));
 document.querySelectorAll("[data-map-point]").forEach(button => button.addEventListener("click", () => selectPointOnMap(button.dataset.mapPoint)));
+document.querySelectorAll("[data-current-location]").forEach(button => button.addEventListener("click", () => useCurrentLocation(button.dataset.currentLocation)));
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
@@ -748,7 +781,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=18.1" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=19" alt="" aria-hidden="true">
     </div>`
   };
 }
