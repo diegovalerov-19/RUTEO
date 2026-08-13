@@ -92,6 +92,12 @@ function showMapBanner(text, type = "info", duration = 4500) {
   if (duration) showMapBanner.timer = setTimeout(() => { banner.hidden = true; }, duration);
 }
 
+function syncDashboardDock() {
+  const dock = $("#map-dashboard-dock");
+  if (!dock) return;
+  dock.classList.toggle("has-visible-dashboard", [...dock.children].some(control => !control.hidden));
+}
+
 function setRouteSegmentsExpanded(expanded) {
   const panel = $("#route-segments-panel");
   const body = $("#route-segments-body");
@@ -106,6 +112,7 @@ function hideRouteSegments() {
   state.routeSegments = [];
   setRouteSegmentsExpanded(false);
   $("#route-segments-panel").hidden = true;
+  syncDashboardDock();
 }
 
 function showRouteSegments(segments) {
@@ -129,6 +136,7 @@ function showRouteSegments(segments) {
   $("#route-segments-count").textContent = `${cleanSegments.length} ${cleanSegments.length === 1 ? "tramo" : "tramos"}`;
   $("#route-segments-panel").hidden = false;
   setRouteSegmentsExpanded(false);
+  syncDashboardDock();
 }
 
 function segmentsForRoute(route) {
@@ -705,7 +713,7 @@ function vehicleMarkerOptions() {
     size: 13,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=15" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=16" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -952,6 +960,7 @@ function setSimulationPanelVisible(visible) {
   showButton.hidden = visible || !state.simulation;
   showButton.setAttribute("aria-expanded", String(visible));
   if (visible) setRouteSegmentsExpanded(false);
+  syncDashboardDock();
 }
 
 function setSimulationDetailsVisible(visible) {
@@ -996,6 +1005,7 @@ function closeSimulation() {
     locateButton.textContent = "◎ Mi ubicación";
   }
   updateSimulationPlaybackControls();
+  syncDashboardDock();
 }
 
 function showRecordedRoute(id) {

@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
   <main class="app-shell">
@@ -131,53 +131,55 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=15" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=16" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
-      <section id="route-segments-panel" class="route-segments-panel" hidden aria-label="Distancia y tiempo por tramos de la ruta">
-        <button id="route-segments-toggle" class="route-segments-toggle" type="button" aria-controls="route-segments-body" aria-expanded="false">
-          <span class="route-segments-heading">TRAMOS</span>
-          <strong id="route-segments-count">0 tramos</strong>
-          <span class="route-segments-chevron" aria-hidden="true">⌄</span>
-        </button>
-        <div id="route-segments-body" class="route-segments-body" hidden>
-          <p>Distancia y tiempo estimado de punto a punto.</p>
-          <div id="route-segments-list" class="route-segments-list"></div>
-        </div>
-      </section>
-      <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚛 Ver camión y controles</button>
-      <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles del camión de basuras">
-        <header class="simulation-heading">
-          <span>CAMIÓN DE BASURAS</span>
-          <div class="simulation-heading-actions">
-            <button id="simulation-details-toggle" type="button" aria-controls="simulation-description" aria-expanded="false" aria-label="Mostrar descripción del recorrido">ⓘ</button>
-            <button id="simulation-hide" type="button" aria-label="Ocultar controles de simulación">−</button>
-            <button id="simulation-close" type="button" aria-label="Finalizar simulación">×</button>
+      <div id="map-dashboard-dock" class="map-dashboard-dock" aria-label="Cuadros de mando del recorrido">
+        <section id="route-segments-panel" class="route-segments-panel" hidden aria-label="Distancia y tiempo por tramos de la ruta">
+          <button id="route-segments-toggle" class="route-segments-toggle" type="button" aria-controls="route-segments-body" aria-expanded="false">
+            <span class="route-segments-heading">TRAMOS</span>
+            <strong id="route-segments-count">0 tramos</strong>
+            <span class="route-segments-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div id="route-segments-body" class="route-segments-body" hidden>
+            <p>Distancia y tiempo estimado de punto a punto.</p>
+            <div id="route-segments-list" class="route-segments-list"></div>
           </div>
-        </header>
-        <div id="simulation-description" class="simulation-description" hidden>
-          <strong id="simulation-title">Recorrido GPS</strong>
-          <div class="simulation-metrics">
-            <span id="simulation-time">00:00 / 00:00</span>
-            <span id="simulation-distance">0 m / 0 m</span>
+        </section>
+        <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚛 Ver camión y controles</button>
+        <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles del camión de basuras">
+          <header class="simulation-heading">
+            <span>CAMIÓN DE BASURAS</span>
+            <div class="simulation-heading-actions">
+              <button id="simulation-details-toggle" type="button" aria-controls="simulation-description" aria-expanded="false" aria-label="Mostrar descripción del recorrido">ⓘ</button>
+              <button id="simulation-hide" type="button" aria-label="Ocultar controles de simulación">−</button>
+              <button id="simulation-close" type="button" aria-label="Finalizar simulación">×</button>
+            </div>
+          </header>
+          <div id="simulation-description" class="simulation-description" hidden>
+            <strong id="simulation-title">Recorrido GPS</strong>
+            <div class="simulation-metrics">
+              <span id="simulation-time">00:00 / 00:00</span>
+              <span id="simulation-distance">0 m / 0 m</span>
+            </div>
           </div>
-        </div>
-        <input id="simulation-progress" class="simulation-progress" type="range" min="0" max="1000" value="0" aria-label="Progreso de la simulación">
-        <div class="simulation-actions">
-          <button id="simulation-play" class="simulation-primary" type="button">▶ Iniciar</button>
-          <button id="simulation-pause" type="button">❚❚ Pausar</button>
-          <button id="simulation-restart" type="button">↺ Reiniciar</button>
-          <button id="simulation-locate" type="button">◎ Mi ubicación</button>
-          <label for="simulation-speed">Velocidad
-            <select id="simulation-speed">
-              <option value="1">1×</option>
-              <option value="2">2×</option>
-              <option value="4">4×</option>
-            </select>
-          </label>
-        </div>
-      </section>
+          <input id="simulation-progress" class="simulation-progress" type="range" min="0" max="1000" value="0" aria-label="Progreso de la simulación">
+          <div class="simulation-actions">
+            <button id="simulation-play" class="simulation-primary" type="button">▶ Iniciar</button>
+            <button id="simulation-pause" type="button">❚❚ Pausar</button>
+            <button id="simulation-restart" type="button">↺ Reiniciar</button>
+            <button id="simulation-locate" type="button">◎ Mi ubicación</button>
+            <label for="simulation-speed">Velocidad
+              <select id="simulation-speed">
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+              </select>
+            </label>
+          </div>
+        </section>
+      </div>
     </section>
   </main>
 
@@ -203,8 +205,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=15"></script>
-  <script src="route-export.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="map-engine.js?v=16"></script>
+  <script src="route-export.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

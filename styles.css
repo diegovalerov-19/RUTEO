@@ -136,6 +136,8 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .map-banner { position: absolute; z-index: 600; top: 18px; left: 50%; max-width: min(90%, 480px); transform: translateX(-50%); padding: 10px 14px; border-top: 3px solid var(--upc-red); border-radius: 8px; color: var(--white); background: var(--black); box-shadow: 0 6px 24px #00000035; font-size: .78rem; font-weight: 650; text-align: center; }
 .map-banner.warning { color: var(--black); background: var(--white); }
 .map-banner.error { color: var(--white); background: var(--upc-red-dark); }
+.map-dashboard-dock { position: absolute; z-index: 640; inset: 0; pointer-events: none; }
+.map-dashboard-dock > * { pointer-events: auto; }
 .route-segments-panel { position: absolute; z-index: 640; top: 100px; left: 18px; width: 152px; overflow: hidden; border-top: 3px solid var(--upc-red); border-radius: 9px; color: var(--white); background: #111111ec; box-shadow: 0 7px 22px #00000048; backdrop-filter: blur(8px); transition: width .18s ease; }
 .route-segments-panel.expanded { width: min(238px, calc(100% - 36px)); }
 .route-segments-toggle { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; width: 100%; min-height: 37px; border: 0; padding: 6px 8px; color: var(--white); background: transparent; text-align: left; }
@@ -201,12 +203,14 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
   .map-banner { top: 12px; }
   .map-brand { top: 10px; left: 10px; width: min(165px, 38%); padding: 4px; border-radius: 6px; }
   .map-provider-button { top: 10px; right: 10px; max-width: 47%; min-height: 32px; padding: 0 10px; font-size: .61rem; }
-  .route-segments-panel { top: 76px; left: 10px; width: 140px; }
-  .route-segments-panel.expanded { width: min(225px, calc(100% - 20px)); }
-  .route-segments-body { max-height: min(155px, calc(41dvh - 122px)); }
-  .simulation-show { left: 10px; bottom: 10px; }
-  .simulation-panel { left: 10px; bottom: 10px; }
-  .simulation-panel.details-open { width: min(300px, calc(100% - 20px)); }
+  .map-dashboard-dock { position: relative; z-index: 700; inset: auto; display: none; flex-wrap: wrap; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--white); box-shadow: 0 5px 16px #00000018; }
+  .map-dashboard-dock.has-visible-dashboard { display: flex; }
+  .route-segments-panel { position: static; flex: 0 0 140px; width: 140px; }
+  .route-segments-panel.expanded { flex-basis: 100%; width: 100%; }
+  .route-segments-body { max-height: 175px; }
+  .simulation-show { position: static; flex: 1 1 180px; min-width: 0; min-height: 37px; border-width: 1px; border-radius: 9px; padding: 0 10px; font-size: .62rem; }
+  .simulation-panel { position: static; flex: 1 1 180px; width: auto; min-width: 0; }
+  .simulation-panel.details-open { flex-basis: 100%; width: 100%; }
   h1 { font-size: 2rem; }
 }
 
