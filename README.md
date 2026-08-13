@@ -8,7 +8,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Inicio, pausa, continuación y finalización de la grabación.
 - Distancia, tiempo, precisión y puntos GPS en vivo.
 - Recuperación de una captura sin finalizar y almacenamiento local.
-- Simulación animada de recorridos guardados con vehículo, progreso y control de velocidad.
+- Simulación animada de recorridos guardados con vehículo, progreso y control de velocidad; los controles permanecen ocultos por defecto para dejar visible el mapa.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.

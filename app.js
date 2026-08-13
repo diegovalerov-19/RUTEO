@@ -579,7 +579,8 @@ function startRouteSimulation(id) {
 
   const simulationName = route.type === "recorded" ? route.name : `${route.start} → ${route.end}`;
   $("#simulation-title").textContent = simulationName;
-  $("#simulation-panel").hidden = false;
+  setSimulationPanelVisible(false);
+  $("#simulation-show").hidden = false;
   $("#simulation-toggle").textContent = "❚❚ Pausar";
   $("#simulation-progress").value = "0";
   $("#simulation-speed").value = "1";
@@ -702,6 +703,14 @@ function restartSimulation() {
   simulation.frameId = requestAnimationFrame(simulationFrame);
 }
 
+function setSimulationPanelVisible(visible) {
+  const panel = $("#simulation-panel");
+  const showButton = $("#simulation-show");
+  panel.hidden = !visible;
+  showButton.hidden = visible || !state.simulation;
+  showButton.setAttribute("aria-expanded", String(visible));
+}
+
 function closeSimulation() {
   const simulation = state.simulation;
   if (simulation) {
@@ -713,6 +722,11 @@ function closeSimulation() {
   state.simulation = null;
   const panel = $("#simulation-panel");
   if (panel) panel.hidden = true;
+  const showButton = $("#simulation-show");
+  if (showButton) {
+    showButton.hidden = true;
+    showButton.setAttribute("aria-expanded", "false");
+  }
 }
 
 function showRecordedRoute(id) {
@@ -842,6 +856,8 @@ $("#clear-history").addEventListener("click", () => {
 
 $("#simulation-toggle").addEventListener("click", toggleSimulation);
 $("#simulation-restart").addEventListener("click", restartSimulation);
+$("#simulation-show").addEventListener("click", () => setSimulationPanelVisible(true));
+$("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-close").addEventListener("click", closeSimulation);
 $("#simulation-speed").addEventListener("change", event => {
   if (state.simulation) state.simulation.speed = Number(event.target.value) || 1;

@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <main class="app-shell">
@@ -113,17 +113,21 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=7" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=8" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
+      <button id="simulation-show" class="simulation-show" type="button" aria-controls="simulation-panel" aria-expanded="false" hidden>🚗 Ver controles</button>
       <section id="simulation-panel" class="simulation-panel" hidden aria-label="Controles de simulación del recorrido">
         <header class="simulation-heading">
           <div>
             <span>SIMULACIÓN DEL RECORRIDO</span>
             <strong id="simulation-title">Recorrido GPS</strong>
           </div>
-          <button id="simulation-close" type="button" aria-label="Cerrar simulación">×</button>
+          <div class="simulation-heading-actions">
+            <button id="simulation-hide" type="button" aria-label="Ocultar controles de simulación">−</button>
+            <button id="simulation-close" type="button" aria-label="Finalizar simulación">×</button>
+          </div>
         </header>
         <div class="simulation-metrics">
           <span id="simulation-time">00:00 / 00:00</span>
@@ -167,8 +171,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=7"></script>
-  <script src="route-export.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="map-engine.js?v=8"></script>
+  <script src="route-export.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
