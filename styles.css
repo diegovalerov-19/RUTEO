@@ -94,18 +94,35 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .kind { padding: 3px 5px; border-radius: 4px; color: var(--white); background: var(--upc-red); font-size: .58rem; font-weight: 800; letter-spacing: .06em; }
 .planned .kind { background: var(--black); }
 .history-card .when { color: var(--upc-red); font-weight: 750; }
-.card-actions { display: flex; gap: 6px; margin-top: 8px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .card-actions button { border: 0; border-radius: 6px; padding: 6px 8px; color: var(--white); background: var(--black); font-size: .67rem; font-weight: 700; }
+.card-actions button[data-simulate] { background: var(--upc-red); }
 .card-actions button:last-child { color: var(--upc-red-dark); background: #fff0f0; }
 .empty { color: var(--gray-500); font-size: .8rem; }
 
 .map-shell { position: relative; min-width: 0; }
 #map { height: 100dvh; background: #dedede; }
-.map-brand { position: absolute; z-index: 600; top: 18px; left: 18px; width: min(320px, 44%); padding: 7px; border: 1px solid var(--gray-300); border-radius: 9px; background: var(--white); box-shadow: 0 5px 18px #0000002c; overflow: hidden; }
-.map-brand img { display: block; width: 100%; height: auto; }
+.map-brand { position: absolute; z-index: 600; top: 18px; left: 18px; width: min(230px, 27%); aspect-ratio: 835 / 247; padding: 5px; border: 1px solid var(--gray-300); border-radius: 8px; background: var(--white); box-shadow: 0 5px 18px #0000002c; overflow: hidden; }
+.map-brand img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .map-banner { position: absolute; z-index: 600; top: 18px; left: 50%; max-width: min(90%, 480px); transform: translateX(-50%); padding: 10px 14px; border-top: 3px solid var(--upc-red); border-radius: 8px; color: var(--white); background: var(--black); box-shadow: 0 6px 24px #00000035; font-size: .78rem; font-weight: 650; text-align: center; }
 .map-banner.warning { color: var(--black); background: var(--white); }
 .map-banner.error { color: var(--white); background: var(--upc-red-dark); }
+.simulation-panel { position: absolute; z-index: 650; right: 18px; bottom: 18px; width: min(430px, calc(100% - 36px)); padding: 14px; border-top: 4px solid var(--upc-red); border-radius: 12px; color: var(--white); background: #111111ee; box-shadow: 0 10px 34px #00000055; backdrop-filter: blur(8px); }
+.simulation-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.simulation-heading span, .simulation-heading strong { display: block; }
+.simulation-heading span { margin-bottom: 3px; color: #cfcfcf; font-size: .61rem; font-weight: 800; letter-spacing: .12em; }
+.simulation-heading strong { font-size: .92rem; }
+.simulation-heading > button { width: 30px; height: 30px; border: 1px solid #ffffff55; border-radius: 50%; color: var(--white); background: transparent; font-size: 1.1rem; line-height: 1; }
+.simulation-metrics { display: flex; justify-content: space-between; gap: 12px; margin: 12px 0 7px; color: #e2e2e2; font-size: .72rem; font-variant-numeric: tabular-nums; }
+.simulation-progress { width: 100%; height: 5px; accent-color: var(--upc-red); }
+.simulation-actions { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 7px; margin-top: 10px; }
+.simulation-actions button { min-height: 38px; border: 1px solid #ffffff55; border-radius: 7px; color: var(--white); background: transparent; font-size: .72rem; font-weight: 750; }
+.simulation-actions .simulation-primary { border-color: var(--upc-red); background: var(--upc-red); }
+.simulation-actions label { margin: 0; color: #cfcfcf; font-size: .62rem; }
+.simulation-actions select { display: block; height: 24px; margin-top: 3px; border: 1px solid #ffffff55; border-radius: 5px; color: var(--white); background: var(--black); }
+.vehicle-icon-shell { background: transparent; border: 0; }
+.vehicle-marker { width: 44px; height: 44px; transform: rotate(var(--vehicle-rotation, 0deg)); transform-origin: center; filter: drop-shadow(0 4px 5px #00000066); transition: transform .16s linear; }
+.vehicle-marker svg { display: block; width: 100%; height: 100%; }
 .leaflet-control-attribution { font-size: 9px; }
 
 @media (max-width: 1100px) {
@@ -114,6 +131,8 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
   .map-shell { order: -1; position: sticky; top: 0; z-index: 450; }
   #map { height: 41dvh; min-height: 280px; }
   .map-banner { top: 12px; }
-  .map-brand { top: 10px; left: 10px; width: min(210px, 45%); padding: 5px; border-radius: 7px; }
+  .map-brand { top: 10px; left: 10px; width: min(165px, 38%); padding: 4px; border-radius: 6px; }
+  .simulation-panel { right: 10px; bottom: 10px; width: calc(100% - 20px); padding: 11px; }
+  .simulation-actions { grid-template-columns: 1fr 1fr auto; }
   h1 { font-size: 2rem; }
 }
