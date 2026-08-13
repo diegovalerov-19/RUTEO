@@ -11,6 +11,13 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
+const mapContainer = document.querySelector("#map");
+if ("ResizeObserver" in window) {
+  new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(mapContainer);
+}
+window.addEventListener("load", () => window.setTimeout(() => map.invalidateSize({ pan: false }), 150));
+window.addEventListener("orientationchange", () => window.setTimeout(() => map.invalidateSize({ pan: false }), 250));
+
 const state = {
   mode: "capture",
   start: null,
