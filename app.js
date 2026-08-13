@@ -30,6 +30,7 @@ const state = {
   end: null,
   waypoints: [],
   waypointSelectionId: null,
+  pointSelectionType: null,
   startMarker: null,
   endMarker: null,
   plannedLine: null,
@@ -509,8 +510,16 @@ function selectWaypointOnMap(id) {
   const waypoint = getWaypoint(id);
   if (!waypoint) return;
   state.waypointSelectionId = waypoint.id;
+  state.pointSelectionType = null;
   const index = state.waypoints.indexOf(waypoint) + 1;
   setMessage(`Toca el mapa para colocar el punto obligatorio ${index}.`);
+}
+
+function selectPointOnMap(type) {
+  state.pointSelectionType = type;
+  state.waypointSelectionId = null;
+  setMessage(`Toca el mapa para colocar el ${type === "start" ? "punto de partida" : "punto final"}.`);
+  scrollToSimulationMap();
 }
 
 function addWaypoint(point = null, label = "", selectOnMap = true) {
@@ -561,6 +570,13 @@ function setPoint(type, latlng, label) {
 
 map.on("click", latlng => {
   if (state.mode !== "plan") return;
+  if (state.pointSelectionType) {
+    const type = state.pointSelectionType;
+    setPoint(type, latlng, `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`);
+    state.pointSelectionType = null;
+    setMessage(type === "start" ? "Punto de partida colocado en el mapa." : "Punto final colocado en el mapa.");
+    return;
+  }
   if (state.waypointSelectionId) {
     const waypoint = getWaypoint(state.waypointSelectionId);
     const index = state.waypoints.indexOf(waypoint) + 1;
@@ -586,13 +602,17 @@ map.on("click", latlng => {
 async function searchPlace(type, waypointId = null) {
   const input = type === "waypoint" ? document.querySelector(`[data-waypoint-input="${waypointId}"]`) : type === "start" ? startInput : endInput;
   const query = input.value.trim();
-  if (!query) return setMessage("Escribe una dirección para buscarla.");
+  if (!query) {
+    setMessage("Escribe una dirección o unas coordenadas para buscarla.");
+    return false;
+  }
   const assignPoint = (point, label) => {
     if (type === "waypoint") {
       setWaypoint(waypointId, point, label);
       state.waypointSelectionId = null;
     } else {
       setPoint(type, point, label);
+      state.pointSelectionType = null;
     }
   };
   const coordinates = parseCoordinates(query);
@@ -600,7 +620,7 @@ async function searchPlace(type, waypointId = null) {
     assignPoint(coordinates.point, coordinates.label);
     map.setView(coordinates.point, 16);
     setMessage(type === "waypoint" ? "Coordenadas del punto obligatorio guardadas." : "Coordenadas encontradas.");
-    return;
+    return true;
   }
   setMessage("Buscando ubicación…");
   try {
@@ -610,23 +630,37 @@ async function searchPlace(type, waypointId = null) {
       assignPoint(googleResult.point, googleResult.label);
       map.setView(googleResult.point, 15);
       setMessage("Ubicación encontrada con Google Maps.");
-      return;
+      return true;
     }
     const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, { headers: { "Accept-Language": "es" } });
     if (!response.ok) throw new Error();
     const [result] = await response.json();
-    if (!result) return setMessage("No encontramos esa ubicación. Intenta ser más específico.");
+    if (!result) {
+      setMessage("No encontramos esa ubicación. Intenta ser más específico.");
+      return false;
+    }
     const latlng = { lat: Number(result.lat), lng: Number(result.lon) };
     assignPoint(latlng, result.display_name);
     map.setView(latlng, 15);
     setMessage("Ubicación encontrada.");
-  } catch { setMessage("No fue posible consultar la ubicación. Revisa tu conexión."); }
+    return true;
+  } catch {
+    setMessage("No fue posible consultar la ubicación. Revisa tu conexión.");
+    return false;
+  }
 }
 
 document.querySelectorAll("[data-search]").forEach(button => button.addEventListener("click", () => searchPlace(button.dataset.search)));
+document.querySelectorAll("[data-map-point]").forEach(button => button.addEventListener("click", () => selectPointOnMap(button.dataset.mapPoint)));
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
+  if (!state.start || startInput.value.trim() !== state.start.label) {
+    if (!await searchPlace("start")) return;
+  }
+  if (!state.end || endInput.value.trim() !== state.end.label) {
+    if (!await searchPlace("end")) return;
+  }
   if (!state.start || !state.end) return setMessage("Busca o selecciona en el mapa los dos puntos.");
   const incompleteWaypoint = state.waypoints.find(waypoint => !waypoint.point);
   if (incompleteWaypoint) {
@@ -683,6 +717,7 @@ function resetPlannedPoints() {
   state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
   state.waypoints = [];
   state.waypointSelectionId = null;
+  state.pointSelectionType = null;
   renderWaypointRows();
   ["startMarker", "endMarker", "plannedLine"].forEach(key => {
     if (state[key]) map.remove(state[key]);
@@ -710,10 +745,10 @@ function saveRoute(route) {
 function vehicleMarkerOptions() {
   return {
     className: "vehicle-icon-shell",
-    size: 18,
+    size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=17" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=18.1" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1159,6 +1194,7 @@ $("#simulation-show").addEventListener("click", () => setSimulationPanelVisible(
 $("#route-segments-toggle").addEventListener("click", event => {
   setRouteSegmentsExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
 });
+$("#route-segments-close").addEventListener("click", hideRouteSegments);
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
   setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
