@@ -21,7 +21,7 @@ const state = {
   watchId: null,
   wakeLock: null,
   track: null,
-  trackLine: L.polyline([], { color: "#d96035", weight: 7, opacity: 0.95 }).addTo(map),
+  trackLine: L.polyline([], { color: "#e30613", weight: 7, opacity: 0.95 }).addTo(map),
   currentMarker: null,
   accuracyCircle: null,
   captureStartMarker: null,
@@ -170,7 +170,7 @@ function handlePosition(position) {
 
   if (!state.captureStartMarker) {
     state.captureStartMarker = L.circleMarker(latlng, {
-      radius: 8, color: "#fff", weight: 3, fillColor: "#287a50", fillOpacity: 1
+      radius: 8, color: "#fff", weight: 3, fillColor: "#111111", fillOpacity: 1
     }).addTo(map).bindPopup("Inicio del recorrido");
     map.setView(latlng, 17);
     navigator.vibrate?.(120);
@@ -188,9 +188,9 @@ function handlePosition(position) {
 function updateCurrentLocation(latlng, accuracy) {
   if (!state.currentMarker) {
     state.currentMarker = L.circleMarker(latlng, {
-      radius: 9, color: "#fff", weight: 3, fillColor: "#2675e8", fillOpacity: 1
+      radius: 9, color: "#fff", weight: 3, fillColor: "#111111", fillOpacity: 1
     }).addTo(map);
-    state.accuracyCircle = L.circle(latlng, { radius: accuracy, color: "#2675e8", weight: 1, fillOpacity: 0.08 }).addTo(map);
+    state.accuracyCircle = L.circle(latlng, { radius: accuracy, color: "#e30613", weight: 1, fillOpacity: 0.08 }).addTo(map);
   } else {
     state.currentMarker.setLatLng(latlng);
     state.accuracyCircle.setLatLng(latlng).setRadius(accuracy);
@@ -244,7 +244,7 @@ function finishCapture() {
   state.track.endedAt = new Date().toISOString();
   const finalPoint = state.track.points.at(-1);
   state.captureEndMarker = L.circleMarker([finalPoint.lat, finalPoint.lng], {
-    radius: 8, color: "#fff", weight: 3, fillColor: "#d96035", fillOpacity: 1
+    radius: 8, color: "#fff", weight: 3, fillColor: "#e30613", fillOpacity: 1
   }).addTo(map).bindPopup("Fin del recorrido");
   saveRoute(state.track);
   localStorage.removeItem(ACTIVE_TRACK_KEY);
@@ -291,7 +291,7 @@ function restoreActiveTrack() {
   state.trackLine.setLatLngs(saved.points.map(point => [point.lat, point.lng]));
   const first = saved.points[0];
   const last = saved.points.at(-1);
-  state.captureStartMarker = L.circleMarker([first.lat, first.lng], { radius: 8, color: "#fff", weight: 3, fillColor: "#287a50", fillOpacity: 1 }).addTo(map);
+  state.captureStartMarker = L.circleMarker([first.lat, first.lng], { radius: 8, color: "#fff", weight: 3, fillColor: "#111111", fillOpacity: 1 }).addTo(map);
   updateCurrentLocation(L.latLng(last.lat, last.lng), last.accuracy);
   map.fitBounds(state.trackLine.getBounds(), { padding: [35, 35] });
   $("#track-name").value = saved.name;
@@ -394,7 +394,7 @@ form.addEventListener("submit", async event => {
     const route = data.routes?.[0];
     if (!route) throw new Error();
     if (state.plannedLine) map.removeLayer(state.plannedLine);
-    state.plannedLine = L.geoJSON(route.geometry, { style: { color: "#6948c7", weight: 6, opacity: 0.9 } }).addTo(map);
+    state.plannedLine = L.geoJSON(route.geometry, { style: { color: "#111111", weight: 6, opacity: 0.9 } }).addTo(map);
     map.fitBounds(state.plannedLine.getBounds(), { padding: [35, 35] });
     const distanceKm = route.distance / 1000;
     const durationMin = Math.round(route.duration / 60);
