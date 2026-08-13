@@ -155,9 +155,9 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .simulation-actions button:disabled { opacity: .42; cursor: default; }
 .simulation-actions label { margin: 0; color: #cfcfcf; font-size: .51rem; }
 .simulation-actions select { display: block; width: 100%; height: 23px; margin-top: 1px; border: 1px solid #ffffff55; border-radius: 5px; color: var(--white); background: var(--black); font-size: .6rem; }
-.vehicle-icon-shell { display: flex !important; align-items: center; justify-content: center; width: 38px !important; height: 38px !important; background: transparent; border: 0; }
-.vehicle-marker { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; transform: rotate(var(--vehicle-rotation, 0deg)); transform-origin: center; filter: drop-shadow(0 3px 4px #00000080); transition: transform .16s linear; }
-.vehicle-marker img { display: block; width: auto; height: 38px; pointer-events: none; user-select: none; }
+.vehicle-icon-shell { display: flex !important; align-items: center; justify-content: center; width: 13px !important; height: 13px !important; background: transparent; border: 0; }
+.vehicle-marker { display: flex; align-items: center; justify-content: center; width: 13px; height: 13px; transform: rotate(var(--vehicle-rotation, 0deg)); transform-origin: center; filter: drop-shadow(0 1px 2px #00000099); transition: transform .16s linear; }
+.vehicle-marker img { display: block; width: auto; height: 13px; pointer-events: none; user-select: none; }
 .leaflet-control-attribution { font-size: 9px; }
 
 .map-settings { width: min(520px, calc(100% - 28px)); border: 0; border-top: 5px solid var(--upc-red); border-radius: 14px; padding: 0; color: var(--black); background: var(--white); box-shadow: 0 18px 60px #00000060; }
