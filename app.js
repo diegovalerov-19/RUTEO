@@ -579,8 +579,8 @@ function startRouteSimulation(id) {
 
   const simulationName = route.type === "recorded" ? route.name : `${route.start} → ${route.end}`;
   $("#simulation-title").textContent = simulationName;
-  setSimulationPanelVisible(false);
-  $("#simulation-show").hidden = false;
+  setSimulationDetailsVisible(false);
+  setSimulationPanelVisible(true);
   $("#simulation-toggle").textContent = "❚❚ Pausar";
   $("#simulation-progress").value = "0";
   $("#simulation-speed").value = "1";
@@ -588,6 +588,7 @@ function startRouteSimulation(id) {
   if (route.type === "recorded") setGpsStatus("Simulando recorrido", simulationName, "good");
   else setMessage("Simulando la ruta planificada.");
   map.fit(latlngs, 55);
+  scrollToSimulationMap();
   renderSimulation(0, false);
   state.simulation.frameId = requestAnimationFrame(simulationFrame);
 }
@@ -711,6 +712,22 @@ function setSimulationPanelVisible(visible) {
   showButton.setAttribute("aria-expanded", String(visible));
 }
 
+function setSimulationDetailsVisible(visible) {
+  const description = $("#simulation-description");
+  const toggle = $("#simulation-details-toggle");
+  description.hidden = !visible;
+  toggle.setAttribute("aria-expanded", String(visible));
+  toggle.setAttribute("aria-label", visible ? "Ocultar descripción del recorrido" : "Mostrar descripción del recorrido");
+}
+
+function scrollToSimulationMap() {
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    window.setTimeout(() => map.resize(), reducedMotion ? 0 : 350);
+  });
+}
+
 function closeSimulation() {
   const simulation = state.simulation;
   if (simulation) {
@@ -727,6 +744,8 @@ function closeSimulation() {
     showButton.hidden = true;
     showButton.setAttribute("aria-expanded", "false");
   }
+  const description = $("#simulation-description");
+  if (description) description.hidden = true;
 }
 
 function showRecordedRoute(id) {
@@ -858,6 +877,9 @@ $("#simulation-toggle").addEventListener("click", toggleSimulation);
 $("#simulation-restart").addEventListener("click", restartSimulation);
 $("#simulation-show").addEventListener("click", () => setSimulationPanelVisible(true));
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
+$("#simulation-details-toggle").addEventListener("click", event => {
+  setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
 $("#simulation-close").addEventListener("click", closeSimulation);
 $("#simulation-speed").addEventListener("change", event => {
   if (state.simulation) state.simulation.speed = Number(event.target.value) || 1;
