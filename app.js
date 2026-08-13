@@ -506,7 +506,15 @@ map.on("click", latlng => {
     return;
   }
   const type = !state.start ? "start" : !state.end ? "end" : null;
-  if (!type) return setMessage("Para agregar una parada intermedia, pulsa + Agregar y luego su botón ◎.");
+  if (!type) {
+    const label = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+    const waypoint = addWaypoint(latlng, label, false);
+    if (waypoint) {
+      const index = state.waypoints.indexOf(waypoint) + 1;
+      setMessage(`Punto obligatorio ${index} agregado desde el mapa. Toca otro lugar para añadir el siguiente.`);
+    }
+    return;
+  }
   setPoint(type, latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`);
   setMessage(type === "start" ? "Ahora selecciona el punto final." : "Puntos listos para calcular.");
 });
@@ -628,10 +636,10 @@ function saveRoute(route) {
 function vehicleMarkerOptions() {
   return {
     className: "vehicle-icon-shell",
-    size: 38,
+    size: 13,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=13" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=14" alt="" aria-hidden="true">
     </div>`
   };
 }

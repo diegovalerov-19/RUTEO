@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
   <main class="app-shell">
@@ -83,7 +83,7 @@
             <div class="waypoints-heading">
               <div>
                 <h3 id="waypoints-title">Puntos obligatorios</h3>
-                <p>La ruta pasará por estos puntos en el orden en que los agregues.</p>
+                <p>Después de marcar origen y destino, toca directamente el mapa para agregarlos en orden.</p>
               </div>
               <button id="add-waypoint" type="button">+ Agregar</button>
             </div>
@@ -101,7 +101,7 @@
             </div>
           </div>
 
-          <p class="help">Toca el mapa para marcar origen y destino. Para un punto obligatorio, pulsa su botón ◎ y después toca el mapa.</p>
+          <p class="help">Toca el mapa para marcar origen, destino y luego todos los puntos obligatorios. También puedes usar coordenadas, búsqueda o el botón ◎.</p>
           <p id="message" class="message" role="status" aria-live="polite"></p>
           <button id="calculate" class="primary-button" type="submit">Calcular y guardar ruta</button>
           <button id="reset" class="secondary-button" type="button">Limpiar puntos</button>
@@ -131,7 +131,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=13" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=14" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -192,8 +192,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=13"></script>
-  <script src="route-export.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <script src="map-engine.js?v=14"></script>
+  <script src="route-export.js?v=14"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
