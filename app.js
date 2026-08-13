@@ -505,18 +505,10 @@ function saveRoute(route) {
 function vehicleMarkerOptions() {
   return {
     className: "vehicle-icon-shell",
-    size: 44,
+    size: 68,
     zIndex: 1000,
-    html: `<div class="vehicle-marker" aria-label="Vehículo de la simulación">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="13" y="5" width="22" height="38" rx="8" fill="#e30613" stroke="#fff" stroke-width="2"/>
-        <path d="M17 16h14l-2-7H19z" fill="#202020"/>
-        <path d="M17 29h14v7H17z" fill="#fff" opacity=".92"/>
-        <rect x="9" y="13" width="5" height="10" rx="2" fill="#111"/>
-        <rect x="34" y="13" width="5" height="10" rx="2" fill="#111"/>
-        <rect x="9" y="29" width="5" height="10" rx="2" fill="#111"/>
-        <rect x="34" y="29" width="5" height="10" rx="2" fill="#111"/>
-      </svg>
+    html: `<div class="vehicle-marker" aria-label="Camión recolector de la simulación">
+      <img src="garbage-truck-marker.png?v=11" alt="" aria-hidden="true">
     </div>`
   };
 }

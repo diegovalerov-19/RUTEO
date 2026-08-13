@@ -9,6 +9,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Distancia, tiempo, precisión y puntos GPS en vivo.
 - Recuperación de una captura sin finalizar y almacenamiento local.
 - Simulación animada con controles verticales compactos en la esquina inferior izquierda, localización GPS manual y desplazamiento automático al mapa.
+- Camión recolector blanco visto desde arriba como marcador de la simulación y botón grande para recuperar los controles en el lado izquierdo del mapa.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
