@@ -17,6 +17,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Camión de simulación reducido nuevamente a un tercio de su tamaño anterior.
 - Panel compacto y desplegable en el lado izquierdo del mapa con distancia y tiempo estimado para cada tramo entre origen, puntos obligatorios y destino.
 - En Android, los cuadros de tramos y simulación se muestran en una franja compacta debajo del mapa y encima del encabezado institucional para no ocultar la ruta.
+- La franja mantiene ambos controles juntos también en pantallas anchas y el camión de simulación aumenta moderadamente de 13 px a 18 px.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
