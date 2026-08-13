@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=18.1">
+  <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
   <main class="app-shell">
@@ -69,19 +69,21 @@
         <form id="route-form">
           <label for="start">Punto de partida</label>
           <div class="input-row">
-            <input id="start" name="start" placeholder="Dirección o latitud, longitud" required>
-            <button class="icon-button" type="button" data-search="start" aria-label="Buscar punto de partida">⌕</button>
-            <button class="icon-button map-point-button" type="button" data-map-point="start" aria-label="Seleccionar punto de partida en el mapa">◎</button>
+            <input id="start" name="start" placeholder="Dirección o coordenadas" required>
+            <button class="icon-button" type="button" data-search="start" aria-label="Buscar punto de partida" title="Buscar dirección o coordenadas">⌕</button>
+            <button class="icon-button map-point-button" type="button" data-map-point="start" aria-label="Seleccionar punto de partida en el mapa" title="Escoger en el mapa">◎</button>
+            <button class="icon-button current-location-button" type="button" data-current-location="start" aria-label="Usar mi ubicación actual como punto de partida" title="Usar mi ubicación actual">GPS</button>
           </div>
-          <small class="coordinate-help">Ejemplo: 4.609710, -74.081750</small>
+          <small class="coordinate-help">⌕ Buscar · ◎ Mapa · GPS Mi ubicación · Ejemplo: 4.609710, -74.081750</small>
 
           <label for="end">Punto final</label>
           <div class="input-row">
-            <input id="end" name="end" placeholder="Dirección o latitud, longitud" required>
-            <button class="icon-button" type="button" data-search="end" aria-label="Buscar punto final">⌕</button>
-            <button class="icon-button map-point-button" type="button" data-map-point="end" aria-label="Seleccionar punto final en el mapa">◎</button>
+            <input id="end" name="end" placeholder="Dirección o coordenadas" required>
+            <button class="icon-button" type="button" data-search="end" aria-label="Buscar punto final" title="Buscar dirección o coordenadas">⌕</button>
+            <button class="icon-button map-point-button" type="button" data-map-point="end" aria-label="Seleccionar punto final en el mapa" title="Escoger en el mapa">◎</button>
+            <button class="icon-button current-location-button" type="button" data-current-location="end" aria-label="Usar mi ubicación actual como punto final" title="Usar mi ubicación actual">GPS</button>
           </div>
-          <small class="coordinate-help">Ejemplo: 4.650000, -74.057000</small>
+          <small class="coordinate-help">⌕ Buscar · ◎ Mapa · GPS Mi ubicación · Ejemplo: 4.650000, -74.057000</small>
 
           <section class="waypoints-builder" aria-labelledby="waypoints-title">
             <div class="waypoints-heading">
@@ -135,7 +137,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=18.1" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=19" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -212,8 +214,8 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=18.1"></script>
-  <script src="route-export.js?v=18.1"></script>
-  <script src="app.js?v=18.1"></script>
+  <script src="map-engine.js?v=19"></script>
+  <script src="route-export.js?v=19"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

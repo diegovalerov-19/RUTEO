@@ -20,6 +20,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - La franja mantiene ambos controles juntos también en pantallas anchas y el camión de simulación aumenta moderadamente de 13 px a 18 px.
 - El origen y el destino aceptan direcciones o coordenadas, pueden reemplazarse tocando el mapa y el panel de tramos se puede cerrar.
 - El camión de la simulación duplica su tamaño de 18 px a 36 px para facilitar su seguimiento.
+- El origen y el destino incluyen un botón para usar la ubicación GPS actual del dispositivo tanto en Android como en el navegador web.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.

@@ -44,7 +44,8 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .icon-button { width: 48px; flex: 0 0 48px; border: 0; border-radius: 9px; color: var(--white); background: var(--black); font-size: 1.5rem; }
 .icon-button:hover { background: var(--upc-red); }
 .map-point-button { font-size: 1.05rem; }
-.coordinate-help { display: block; margin: -7px 0 13px; color: var(--gray-700); font-size: .62rem; }
+.current-location-button { font-size: .58rem; font-weight: 850; letter-spacing: -.02em; }
+.coordinate-help { display: block; margin: 4px 0 13px; color: var(--gray-700); font-size: .62rem; line-height: 1.4; }
 .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .waypoints-builder { margin-top: 18px; padding: 13px; border: 1px solid var(--gray-300); border-left: 4px solid var(--upc-red); border-radius: 9px; background: var(--gray-100); }
 .waypoints-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
@@ -221,7 +222,9 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 
 @media (max-width: 480px) {
   .input-row { gap: 5px; }
-  .icon-button { width: 44px; flex-basis: 44px; }
+  .icon-button { width: 40px; flex-basis: 40px; }
+  .input-row input { min-width: 0; padding-inline: 9px; }
+  .coordinate-help { font-size: .57rem; }
   .map-settings-actions { grid-template-columns: 1fr; }
   .export-options { right: 0; left: auto; }
 }
