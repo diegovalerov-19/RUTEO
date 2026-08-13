@@ -28,6 +28,8 @@ const state = {
   mode: "capture",
   start: null,
   end: null,
+  waypoints: [],
+  waypointSelectionId: null,
   startMarker: null,
   endMarker: null,
   plannedLine: null,
@@ -50,11 +52,13 @@ const startInput = $("#start");
 const endInput = $("#end");
 const dateInput = $("#date");
 const timeInput = $("#time");
+const waypointsList = $("#waypoints-list");
 const message = $("#message");
 const calculateButton = $("#calculate");
 const startCaptureButton = $("#start-capture");
 const pauseCaptureButton = $("#pause-capture");
 const finishCaptureButton = $("#finish-capture");
+let waypointSequence = 0;
 
 const now = new Date();
 dateInput.value = now.toISOString().slice(0, 10);
@@ -390,6 +394,91 @@ map.on("dragstart", () => { if (state.track?.status === "recording") state.follo
 
 function setMessage(text = "") { message.textContent = text; }
 
+function parseCoordinates(query) {
+  const match = query.trim().replace(/[()]/g, "").match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { point: { lat, lng }, label: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
+}
+
+function getWaypoint(id) {
+  return state.waypoints.find(waypoint => waypoint.id === String(id));
+}
+
+function refreshWaypointMarkers() {
+  state.waypoints.forEach((waypoint, index) => {
+    if (waypoint.marker) map.remove(waypoint.marker);
+    waypoint.marker = null;
+    if (!waypoint.point) return;
+    waypoint.marker = map.createHtmlMarker(waypoint.point, {
+      className: "waypoint-icon-shell",
+      size: 30,
+      zIndex: 900,
+      html: `<div class="waypoint-map-marker" aria-label="Punto obligatorio ${index + 1}">${index + 1}</div>`
+    });
+  });
+}
+
+function renderWaypointRows() {
+  waypointsList.innerHTML = state.waypoints.map((waypoint, index) => `<div class="waypoint-row">
+    <label for="waypoint-${waypoint.id}">Punto obligatorio ${index + 1}</label>
+    <div class="waypoint-input-row">
+      <input id="waypoint-${waypoint.id}" data-waypoint-input="${waypoint.id}" value="${escapeHtml(waypoint.label || "")}" placeholder="Latitud, longitud o dirección">
+      <button type="button" data-search-waypoint="${waypoint.id}" aria-label="Buscar punto obligatorio ${index + 1}">⌕</button>
+      <button type="button" data-map-waypoint="${waypoint.id}" aria-label="Colocar punto obligatorio ${index + 1} en el mapa">◎</button>
+      <button class="remove-waypoint" type="button" data-remove-waypoint="${waypoint.id}" aria-label="Eliminar punto obligatorio ${index + 1}">×</button>
+    </div>
+  </div>`).join("");
+
+  document.querySelectorAll("[data-waypoint-input]").forEach(input => input.addEventListener("input", event => {
+    const waypoint = getWaypoint(event.currentTarget.dataset.waypointInput);
+    if (waypoint) waypoint.label = event.currentTarget.value;
+  }));
+  document.querySelectorAll("[data-search-waypoint]").forEach(button => button.addEventListener("click", () => searchPlace("waypoint", button.dataset.searchWaypoint)));
+  document.querySelectorAll("[data-map-waypoint]").forEach(button => button.addEventListener("click", () => selectWaypointOnMap(button.dataset.mapWaypoint)));
+  document.querySelectorAll("[data-remove-waypoint]").forEach(button => button.addEventListener("click", () => removeWaypoint(button.dataset.removeWaypoint)));
+}
+
+function selectWaypointOnMap(id) {
+  const waypoint = getWaypoint(id);
+  if (!waypoint) return;
+  state.waypointSelectionId = waypoint.id;
+  const index = state.waypoints.indexOf(waypoint) + 1;
+  setMessage(`Toca el mapa para colocar el punto obligatorio ${index}.`);
+}
+
+function addWaypoint(point = null, label = "", selectOnMap = true) {
+  if (state.waypoints.length >= 8) return setMessage("Puedes agregar hasta 8 puntos obligatorios por ruta.");
+  const waypoint = { id: String(++waypointSequence), point, label, marker: null };
+  state.waypoints.push(waypoint);
+  renderWaypointRows();
+  refreshWaypointMarkers();
+  if (selectOnMap) selectWaypointOnMap(waypoint.id);
+  return waypoint;
+}
+
+function removeWaypoint(id) {
+  const waypoint = getWaypoint(id);
+  if (!waypoint) return;
+  if (waypoint.marker) map.remove(waypoint.marker);
+  state.waypoints = state.waypoints.filter(item => item.id !== waypoint.id);
+  if (state.waypointSelectionId === waypoint.id) state.waypointSelectionId = null;
+  renderWaypointRows();
+  refreshWaypointMarkers();
+  setMessage(state.waypoints.length ? "Puntos obligatorios reordenados." : "Ya no hay puntos obligatorios.");
+}
+
+function setWaypoint(id, latlng, label) {
+  const waypoint = getWaypoint(id);
+  if (!waypoint) return;
+  waypoint.point = { lat: Number(latlng.lat), lng: Number(latlng.lng) };
+  waypoint.label = label;
+  renderWaypointRows();
+  refreshWaypointMarkers();
+}
+
 function setPoint(type, latlng, label) {
   const isStart = type === "start";
   const markerKey = isStart ? "startMarker" : "endMarker";
@@ -408,22 +497,45 @@ function setPoint(type, latlng, label) {
 
 map.on("click", latlng => {
   if (state.mode !== "plan") return;
-  const type = !state.start || state.end ? "start" : "end";
-  if (type === "start" && state.end) resetPlannedPoints();
+  if (state.waypointSelectionId) {
+    const waypoint = getWaypoint(state.waypointSelectionId);
+    const index = state.waypoints.indexOf(waypoint) + 1;
+    setWaypoint(state.waypointSelectionId, latlng, `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`);
+    state.waypointSelectionId = null;
+    setMessage(`Punto obligatorio ${index} colocado. La ruta respetará este orden.`);
+    return;
+  }
+  const type = !state.start ? "start" : !state.end ? "end" : null;
+  if (!type) return setMessage("Para agregar una parada intermedia, pulsa + Agregar y luego su botón ◎.");
   setPoint(type, latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`);
   setMessage(type === "start" ? "Ahora selecciona el punto final." : "Puntos listos para calcular.");
 });
 
-async function searchPlace(type) {
-  const input = type === "start" ? startInput : endInput;
+async function searchPlace(type, waypointId = null) {
+  const input = type === "waypoint" ? document.querySelector(`[data-waypoint-input="${waypointId}"]`) : type === "start" ? startInput : endInput;
   const query = input.value.trim();
   if (!query) return setMessage("Escribe una dirección para buscarla.");
+  const assignPoint = (point, label) => {
+    if (type === "waypoint") {
+      setWaypoint(waypointId, point, label);
+      state.waypointSelectionId = null;
+    } else {
+      setPoint(type, point, label);
+    }
+  };
+  const coordinates = parseCoordinates(query);
+  if (coordinates) {
+    assignPoint(coordinates.point, coordinates.label);
+    map.setView(coordinates.point, 16);
+    setMessage(type === "waypoint" ? "Coordenadas del punto obligatorio guardadas." : "Coordenadas encontradas.");
+    return;
+  }
   setMessage("Buscando ubicación…");
   try {
     let googleResult = null;
     try { googleResult = await map.geocode(query); } catch { /* Usa el buscador de respaldo. */ }
     if (googleResult) {
-      setPoint(type, googleResult.point, googleResult.label);
+      assignPoint(googleResult.point, googleResult.label);
       map.setView(googleResult.point, 15);
       setMessage("Ubicación encontrada con Google Maps.");
       return;
@@ -433,7 +545,7 @@ async function searchPlace(type) {
     const [result] = await response.json();
     if (!result) return setMessage("No encontramos esa ubicación. Intenta ser más específico.");
     const latlng = { lat: Number(result.lat), lng: Number(result.lon) };
-    setPoint(type, latlng, result.display_name);
+    assignPoint(latlng, result.display_name);
     map.setView(latlng, 15);
     setMessage("Ubicación encontrada.");
   } catch { setMessage("No fue posible consultar la ubicación. Revisa tu conexión."); }
@@ -444,10 +556,16 @@ document.querySelectorAll("[data-search]").forEach(button => button.addEventList
 form.addEventListener("submit", async event => {
   event.preventDefault();
   if (!state.start || !state.end) return setMessage("Busca o selecciona en el mapa los dos puntos.");
+  const incompleteWaypoint = state.waypoints.find(waypoint => !waypoint.point);
+  if (incompleteWaypoint) {
+    const index = state.waypoints.indexOf(incompleteWaypoint) + 1;
+    return setMessage(`Falta colocar el punto obligatorio ${index}. Escribe coordenadas, busca una dirección o usa el mapa.`);
+  }
   calculateButton.disabled = true;
   setMessage("Calculando la mejor ruta…");
   try {
-    const coords = `${state.start.lng},${state.start.lat};${state.end.lng},${state.end.lat}`;
+    const routeStops = [state.start, ...state.waypoints.map(waypoint => waypoint.point), state.end];
+    const coords = routeStops.map(point => `${point.lng},${point.lat}`).join(";");
     const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
     if (!response.ok) throw new Error();
     const data = await response.json();
@@ -472,14 +590,19 @@ form.addEventListener("submit", async event => {
       distanceMeters: route.distance,
       durationMin,
       durationMilliseconds: route.duration * 1000,
+      waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
       points
     });
-    setMessage("Ruta calculada y guardada.");
+    setMessage(state.waypoints.length ? `Ruta calculada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.` : "Ruta calculada y guardada.");
   } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
   finally { calculateButton.disabled = false; }
 });
 
 function resetPlannedPoints() {
+  state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
+  state.waypoints = [];
+  state.waypointSelectionId = null;
+  renderWaypointRows();
   ["startMarker", "endMarker", "plannedLine"].forEach(key => {
     if (state[key]) map.remove(state[key]);
     state[key] = null;
@@ -505,10 +628,10 @@ function saveRoute(route) {
 function vehicleMarkerOptions() {
   return {
     className: "vehicle-icon-shell",
-    size: 68,
+    size: 38,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=12" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=13" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -829,6 +952,14 @@ function showPlannedRoute(id) {
   state.end = { ...points.at(-1), label: route.end };
   setPoint("start", state.start, route.start);
   setPoint("end", state.end, route.end);
+  state.waypoints = (Array.isArray(route.waypoints) ? route.waypoints : []).map(waypoint => ({
+    id: String(++waypointSequence),
+    point: { lat: Number(waypoint.lat), lng: Number(waypoint.lng) },
+    label: waypoint.label || `${Number(waypoint.lat).toFixed(6)}, ${Number(waypoint.lng).toFixed(6)}`,
+    marker: null
+  })).filter(waypoint => Number.isFinite(waypoint.point.lat) && Number.isFinite(waypoint.point.lng));
+  renderWaypointRows();
+  refreshWaypointMarkers();
   state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
   map.fit(points, 35);
   dateInput.value = route.date;
@@ -882,6 +1013,7 @@ function renderHistory() {
       <p class="when">${new Date(`${route.date}T${route.time}`).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}</p>
       <p><strong>Desde:</strong> ${escapeHtml(route.start)}</p>
       <p><strong>Hasta:</strong> ${escapeHtml(route.end)}</p>
+      ${route.waypoints?.length ? `<p><strong>Puntos obligatorios:</strong> ${route.waypoints.length} · ${route.waypoints.map(waypoint => escapeHtml(waypoint.label || `${waypoint.lat}, ${waypoint.lng}`)).join(" → ")}</p>` : ""}
       <p>${route.distanceKm.toFixed(1)} km · ${route.durationMin} min aprox.</p>
         <div class="card-actions"><button data-simulate="${route.id}">▶ Simular</button><button data-view-planned="${route.id}">Ver en mapa</button>${exportMenu(route)}<button class="delete-route" data-delete="${route.id}">Eliminar</button></div>
     </article>`;
@@ -915,6 +1047,7 @@ function formatDuration(milliseconds) {
 function formatDateTime(value) { return new Date(value).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }); }
 function escapeHtml(value = "") { return value.replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
 
+$("#add-waypoint").addEventListener("click", () => addWaypoint());
 $("#reset").addEventListener("click", resetPlannedPoints);
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
