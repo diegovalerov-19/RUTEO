@@ -147,17 +147,19 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .map-banner.error { color: var(--white); background: var(--upc-red-dark); }
 .map-dashboard-dock { position: absolute; z-index: 640; inset: 0; pointer-events: none; }
 .map-dashboard-dock > * { pointer-events: auto; }
-.route-segments-panel { position: absolute; z-index: 640; top: 100px; left: 18px; width: 152px; overflow: hidden; border-top: 3px solid var(--upc-red); border-radius: 9px; color: var(--white); background: #111111ec; box-shadow: 0 7px 22px #00000048; backdrop-filter: blur(8px); transition: width .18s ease; }
-.route-segments-panel.expanded { width: min(238px, calc(100% - 36px)); }
-.route-segments-header { display: flex; align-items: stretch; }
-.route-segments-toggle { display: grid; flex: 1 1 auto; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; width: auto; min-height: 37px; border: 0; padding: 6px 6px 6px 8px; color: var(--white); background: transparent; text-align: left; }
-.route-segments-toggle:hover { background: #ffffff10; }
-.route-segments-heading { color: #d4d4d4; font-size: .5rem; font-weight: 850; letter-spacing: .1em; }
-.route-segments-toggle strong { font-size: .58rem; white-space: nowrap; }
-.route-segments-chevron { font-size: .9rem; line-height: 1; transition: transform .18s ease; }
-.route-segments-panel.expanded .route-segments-chevron { transform: rotate(180deg); }
-.route-segments-close { flex: 0 0 25px; width: 25px; min-height: 37px; border: 0; border-left: 1px solid #ffffff22; padding: 0; color: #d7d7d7; background: transparent; font-size: .8rem; }
-.route-segments-close:hover { color: var(--white); background: var(--upc-red); }
+.map-metrics-stack { position: absolute; z-index: 640; top: 100px; left: 18px; display: grid; gap: 8px; width: 152px; transition: width .18s ease; }
+.map-metrics-stack.expanded { width: min(238px, calc(100% - 36px)); }
+.route-segments-panel, .speed-panel { position: static; width: 100%; overflow: hidden; border-top: 3px solid var(--upc-red); border-radius: 9px; color: var(--white); background: #111111ec; box-shadow: 0 7px 22px #00000048; backdrop-filter: blur(8px); transition: width .18s ease; }
+.route-segments-panel.expanded, .speed-panel.expanded { width: 100%; }
+.route-segments-header, .speed-panel-header { display: flex; align-items: stretch; }
+.route-segments-toggle, .speed-panel-toggle { display: grid; flex: 1 1 auto; grid-template-columns: 1fr auto auto; align-items: center; gap: 6px; width: auto; min-height: 37px; border: 0; padding: 6px 6px 6px 8px; color: var(--white); background: transparent; text-align: left; }
+.route-segments-toggle:hover, .speed-panel-toggle:hover { background: #ffffff10; }
+.route-segments-heading, .speed-panel-heading { color: #d4d4d4; font-size: .5rem; font-weight: 850; letter-spacing: .1em; }
+.route-segments-toggle strong, .speed-panel-toggle strong { font-size: .58rem; white-space: nowrap; }
+.route-segments-chevron, .speed-panel-chevron { font-size: .9rem; line-height: 1; transition: transform .18s ease; }
+.route-segments-panel.expanded .route-segments-chevron, .speed-panel.expanded .speed-panel-chevron { transform: rotate(180deg); }
+.route-segments-close, .speed-panel-close { flex: 0 0 25px; width: 25px; min-height: 37px; border: 0; border-left: 1px solid #ffffff22; padding: 0; color: #d7d7d7; background: transparent; font-size: .8rem; }
+.route-segments-close:hover, .speed-panel-close:hover { color: var(--white); background: var(--upc-red); }
 .route-segments-body { max-height: min(250px, calc(100dvh - 170px)); overflow-y: auto; padding: 6px 7px 8px; border-top: 1px solid #ffffff22; scrollbar-width: thin; }
 .route-segments-body > p { margin: 0 2px 6px; color: #cfcfcf; font-size: .54rem; line-height: 1.3; }
 .route-segments-list { display: grid; gap: 5px; }
@@ -168,6 +170,23 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .route-segment-metrics span { padding: 4px 5px; border-radius: 4px; background: #00000035; }
 .route-segment-metrics small { display: block; color: #bdbdbd; font-size: .45rem; }
 .route-segment-metrics strong { display: block; margin-top: 1px; font-size: .58rem; font-variant-numeric: tabular-nums; }
+.speed-panel-body { max-height: min(310px, calc(100dvh - 205px)); overflow-y: auto; padding: 7px; border-top: 1px solid #ffffff22; }
+.speed-average { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px; border-radius: 5px; background: #ffffff0d; }
+.speed-average small { color: #cfcfcf; font-size: .5rem; line-height: 1.25; }
+.speed-average strong { font-size: .68rem; white-space: nowrap; }
+.speed-zone-times { display: grid; gap: 4px; margin-top: 6px; }
+.speed-zone { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 5px; padding: 5px 6px; border-radius: 4px; background: #00000035; }
+.speed-zone > span, .speed-color-legend li > span { width: 9px; height: 9px; border-radius: 50%; }
+.speed-zone small { color: #d3d3d3; font-size: .49rem; }
+.speed-zone strong { font-size: .56rem; font-variant-numeric: tabular-nums; }
+.speed-zone.low > span, .speed-color-legend .low { background: #E62020; }
+.speed-zone.medium > span, .speed-color-legend .medium { background: #FFD700; }
+.speed-zone.high > span, .speed-color-legend .high { background: #00FF00; }
+.speed-gradient-legend { margin-top: 7px; }
+.speed-gradient-scale { height: 9px; border: 1px solid #ffffff66; border-radius: 7px; background: linear-gradient(90deg, #E62020 0%, #E62020 30%, #FFD700 52%, #FFD700 72%, #00FF00 100%); box-shadow: 0 0 8px #ffffff22; }
+.speed-gradient-legend > div:last-child { display: flex; justify-content: space-between; margin-top: 2px; color: #cfcfcf; font-size: .43rem; }
+.speed-color-legend { display: grid; gap: 3px; margin: 7px 0 0; padding: 0; list-style: none; }
+.speed-color-legend li { display: flex; align-items: center; gap: 5px; color: #d3d3d3; font-size: .47rem; line-height: 1.25; }
 .simulation-show { position: absolute; z-index: 650; left: 18px; bottom: 18px; min-width: 150px; min-height: 48px; border: 2px solid #fff; border-radius: 24px; padding: 0 18px; color: var(--white); background: #111111ee; box-shadow: 0 8px 24px #00000055; font-size: .78rem; font-weight: 850; }
 .simulation-show:hover { background: var(--upc-red); }
 .simulation-panel { position: absolute; z-index: 650; left: 18px; bottom: 18px; width: 160px; padding: 7px 8px 8px; border-top: 3px solid var(--upc-red); border-radius: 10px; color: var(--white); background: #111111e8; box-shadow: 0 8px 26px #00000050; backdrop-filter: blur(8px); transition: width .18s ease; }
@@ -217,9 +236,11 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
   .map-provider-button { top: 10px; right: 10px; max-width: 47%; min-height: 32px; padding: 0 10px; font-size: .61rem; }
   .map-dashboard-dock { position: relative; z-index: 700; inset: auto; display: none; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; gap: 8px; padding: 8px clamp(10px, 2vw, 20px); background: var(--white); box-shadow: 0 5px 16px #00000018; }
   .map-dashboard-dock.has-visible-dashboard { display: flex; }
-  .route-segments-panel { position: static !important; flex: 0 0 clamp(140px, 18vw, 180px); width: clamp(140px, 18vw, 180px); }
-  .route-segments-panel.expanded { flex: 0 1 360px; width: min(360px, 100%); }
+  .map-metrics-stack { position: static !important; flex: 0 0 clamp(140px, 18vw, 180px); width: clamp(140px, 18vw, 180px); }
+  .map-metrics-stack.expanded { flex: 0 1 360px; width: min(360px, 100%); }
+  .route-segments-panel, .speed-panel, .route-segments-panel.expanded, .speed-panel.expanded { width: 100%; }
   .route-segments-body { max-height: 175px; }
+  .speed-panel-body { max-height: 220px; }
   .simulation-show { position: static !important; flex: 1 1 160px; width: auto; max-width: 230px; min-width: 0; min-height: 37px; border-width: 1px; border-radius: 9px; padding: 0 10px; font-size: .62rem; }
   .simulation-panel { position: static !important; flex: 1 1 160px; width: auto; max-width: 230px; min-width: 0; }
   .simulation-panel.details-open { flex: 0 1 360px; width: min(360px, 100%); }

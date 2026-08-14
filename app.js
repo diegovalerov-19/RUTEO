@@ -7,6 +7,8 @@ const SIMULATION_MIN_DURATION_MS = 12000;
 const SIMULATION_MAX_DURATION_MS = 90000;
 const SIMULATION_COMPRESSION = 20;
 const GOOGLE_MAPS_KEY = "ruteo-google-maps-key-v1";
+const SPEED_COLORS = { low: "#E62020", medium: "#FFD700", high: "#00FF00" };
+const SPEED_GRADIENT_MAX_LAYERS = 1200;
 
 async function initApp() {
 const mapContainer = document.querySelector("#map");
@@ -46,7 +48,9 @@ const state = {
   timerId: null,
   followLocation: true,
   simulation: null,
-  routeSegments: []
+  routeSegments: [],
+  speedProfile: null,
+  speedGradientLayers: []
 };
 
 const $ = selector => document.querySelector(selector);
@@ -76,6 +80,8 @@ function setMode(mode) {
   if (state.mode !== mode) {
     closeSimulation();
     hideRouteSegments();
+    hideSpeedPanel();
+    clearSpeedGradient();
   }
   state.mode = mode;
   document.querySelectorAll(".mode-tab").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
@@ -98,7 +104,10 @@ function showMapBanner(text, type = "info", duration = 4500) {
 function syncDashboardDock() {
   const dock = $("#map-dashboard-dock");
   if (!dock) return;
-  dock.classList.toggle("has-visible-dashboard", [...dock.children].some(control => !control.hidden));
+  const metricsStack = $("#map-metrics-stack");
+  metricsStack.hidden = $("#route-segments-panel").hidden && $("#speed-panel").hidden;
+  metricsStack.classList.toggle("expanded", $("#route-segments-panel").classList.contains("expanded") || $("#speed-panel").classList.contains("expanded"));
+  dock.classList.toggle("has-visible-dashboard", !metricsStack.hidden || !$("#simulation-show").hidden || !$("#simulation-panel").hidden);
 }
 
 function setRouteSegmentsExpanded(expanded) {
@@ -108,7 +117,13 @@ function setRouteSegmentsExpanded(expanded) {
   panel.classList.toggle("expanded", expanded);
   body.hidden = !expanded;
   toggle.setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#speed-panel").classList.remove("expanded");
+    $("#speed-panel-body").hidden = true;
+    $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+  }
   if (expanded && state.simulation) setSimulationPanelVisible(false);
+  syncDashboardDock();
 }
 
 function hideRouteSegments() {
@@ -151,6 +166,179 @@ function segmentsForRoute(route) {
   const durationSeconds = Number(durationMilliseconds / 1000);
   if (!Number.isFinite(distanceMeters) || !Number.isFinite(durationSeconds)) return [];
   return [{ from: recorded ? "Inicio" : "Origen", to: recorded ? "Fin" : "Destino", distanceMeters, durationSeconds }];
+}
+
+function speedZoneFor(speedKmh) {
+  if (speedKmh > 35) return "high";
+  if (speedKmh > 15) return "medium";
+  return "low";
+}
+
+function speedProfileForRoute(route) {
+  if (!route) return null;
+  let segments = [];
+  if (route.type === "recorded") {
+    const points = window.RouteExport.routePoints(route);
+    for (let index = 1; index < points.length; index += 1) {
+      const from = points[index - 1];
+      const to = points[index];
+      const distanceMeters = distanceBetween(from, to);
+      const elapsedSeconds = (new Date(to.timestamp).getTime() - new Date(from.timestamp).getTime()) / 1000;
+      const gpsSpeedMs = Number(to.speed);
+      const hasGpsSpeed = to.speed !== null && to.speed !== undefined && Number.isFinite(gpsSpeedMs) && gpsSpeedMs >= 0;
+      const durationSeconds = Number.isFinite(elapsedSeconds) && elapsedSeconds > 0
+        ? elapsedSeconds
+        : hasGpsSpeed && gpsSpeedMs > 0 ? distanceMeters / gpsSpeedMs : 0;
+      segments.push({ distanceMeters, durationSeconds, speedKmh: hasGpsSpeed ? gpsSpeedMs * 3.6 : null });
+    }
+
+    let pausedSeconds = Math.max(0, Number(route.pausedMilliseconds || 0) / 1000);
+    [...segments.keys()].sort((left, right) => segments[right].durationSeconds - segments[left].durationSeconds).forEach(index => {
+      if (pausedSeconds <= 0) return;
+      const removable = Math.min(pausedSeconds, Math.max(0, segments[index].durationSeconds - 0.1));
+      segments[index].durationSeconds -= removable;
+      pausedSeconds -= removable;
+    });
+    segments = segments.map(segment => ({
+      ...segment,
+      speedKmh: Number.isFinite(segment.speedKmh) ? segment.speedKmh : segment.durationSeconds > 0 ? segment.distanceMeters / segment.durationSeconds * 3.6 : 0
+    }));
+  } else {
+    segments = segmentsForRoute(route).map(segment => {
+      const distanceMeters = Number(segment.distanceMeters) || 0;
+      const durationSeconds = Number(segment.durationSeconds) || 0;
+      return { distanceMeters, durationSeconds, speedKmh: durationSeconds > 0 ? distanceMeters / durationSeconds * 3.6 : 0 };
+    });
+  }
+
+  segments = segments.filter(segment => Number.isFinite(segment.speedKmh) && Number.isFinite(segment.durationSeconds));
+  if (!segments.length) return null;
+  const totalDistanceMeters = segments.reduce((sum, segment) => sum + segment.distanceMeters, 0);
+  const totalDurationSeconds = segments.reduce((sum, segment) => sum + segment.durationSeconds, 0);
+  const averageSpeedKmh = totalDurationSeconds > 0 ? totalDistanceMeters / totalDurationSeconds * 3.6 : 0;
+  const zoneSeconds = { low: 0, medium: 0, high: 0 };
+  segments.forEach(segment => { zoneSeconds[speedZoneFor(segment.speedKmh)] += segment.durationSeconds; });
+  return { averageSpeedKmh, totalDistanceMeters, totalDurationSeconds, zoneSeconds, segments };
+}
+
+function mixHexColors(from, to, ratio) {
+  const read = value => [1, 3, 5].map(index => Number.parseInt(value.slice(index, index + 2), 16));
+  const start = read(from);
+  const end = read(to);
+  return `#${start.map((value, index) => Math.round(value + (end[index] - value) * ratio).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function speedColorPosition(speedKmh) {
+  const zone = speedZoneFor(speedKmh);
+  return zone === "low" ? 0 : zone === "medium" ? 0.5 : 1;
+}
+
+function speedGradientColor(position) {
+  const safePosition = Math.min(1, Math.max(0, position));
+  return safePosition <= 0.5
+    ? mixHexColors(SPEED_COLORS.low, SPEED_COLORS.medium, safePosition * 2)
+    : mixHexColors(SPEED_COLORS.medium, SPEED_COLORS.high, (safePosition - 0.5) * 2);
+}
+
+function interpolatePoint(from, to, ratio) {
+  return { lat: from.lat + (to.lat - from.lat) * ratio, lng: from.lng + (to.lng - from.lng) * ratio };
+}
+
+function clearSpeedGradient() {
+  state.speedGradientLayers.forEach(layer => map.remove(layer));
+  state.speedGradientLayers = [];
+}
+
+function renderSpeedGradient(route, profile) {
+  clearSpeedGradient();
+  const points = window.RouteExport.routePoints(route);
+  if (points.length < 2 || !profile) return;
+  let speeds;
+  if (route.type === "recorded" && profile.segments.length === points.length - 1) {
+    speeds = profile.segments.map(segment => segment.speedKmh);
+  } else if (profile.segments.length > 1) {
+    const segmentLimits = [];
+    profile.segments.reduce((distance, segment) => {
+      segmentLimits.push(distance + segment.distanceMeters);
+      return distance + segment.distanceMeters;
+    }, 0);
+    const geometryDistances = points.slice(1).map((point, index) => distanceBetween(points[index], point));
+    const geometryDistance = geometryDistances.reduce((sum, distance) => sum + distance, 0);
+    let travelled = 0;
+    speeds = geometryDistances.map(pieceDistance => {
+      const midpoint = travelled + pieceDistance / 2;
+      travelled += pieceDistance;
+      const proportionalDistance = geometryDistance > 0 ? midpoint / geometryDistance * profile.totalDistanceMeters : midpoint;
+      const segmentIndex = segmentLimits.findIndex(limit => proportionalDistance <= limit);
+      return profile.segments[segmentIndex < 0 ? profile.segments.length - 1 : segmentIndex].speedKmh;
+    });
+  } else {
+    speeds = Array(points.length - 1).fill(profile.averageSpeedKmh);
+  }
+  const positions = speeds.map(speedColorPosition);
+  const colors = positions.map(speedGradientColor);
+  if (colors.every(color => color === colors[0])) {
+    state.speedGradientLayers.push(map.createPolyline(points, { color: colors[0], weight: 7, opacity: 0.96 }));
+    return;
+  }
+
+  const steps = Math.max(1, Math.min(6, Math.floor(SPEED_GRADIENT_MAX_LAYERS / colors.length)));
+  colors.forEach((color, index) => {
+    const startPosition = index ? (positions[index - 1] + positions[index]) / 2 : positions[index];
+    const endPosition = index < positions.length - 1 ? (positions[index] + positions[index + 1]) / 2 : positions[index];
+    for (let step = 0; step < steps; step += 1) {
+      const startRatio = step / steps;
+      const endRatio = (step + 1) / steps;
+      state.speedGradientLayers.push(map.createPolyline([
+        interpolatePoint(points[index], points[index + 1], startRatio),
+        interpolatePoint(points[index], points[index + 1], endRatio)
+      ], {
+        color: speedGradientColor(startPosition + (endPosition - startPosition) * (startRatio + endRatio) / 2),
+        weight: 7,
+        opacity: 0.96
+      }));
+    }
+  });
+}
+
+function setSpeedPanelExpanded(expanded) {
+  const panel = $("#speed-panel");
+  panel.classList.toggle("expanded", expanded);
+  $("#speed-panel-body").hidden = !expanded;
+  $("#speed-panel-toggle").setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#route-segments-panel").classList.remove("expanded");
+    $("#route-segments-body").hidden = true;
+    $("#route-segments-toggle").setAttribute("aria-expanded", "false");
+    if (state.simulation) setSimulationPanelVisible(false);
+  }
+  syncDashboardDock();
+}
+
+function hideSpeedPanel() {
+  state.speedProfile = null;
+  setSpeedPanelExpanded(false);
+  $("#speed-panel").hidden = true;
+  syncDashboardDock();
+}
+
+function showSpeedPanelForRoute(route) {
+  const profile = speedProfileForRoute(route);
+  if (!profile) {
+    hideSpeedPanel();
+    clearSpeedGradient();
+    return;
+  }
+  state.speedProfile = profile;
+  $("#speed-panel-summary").textContent = `${profile.averageSpeedKmh.toFixed(1)} km/h`;
+  $("#speed-average-value").textContent = `${profile.averageSpeedKmh.toFixed(1)} km/h`;
+  $("#speed-low-time").textContent = formatDuration(profile.zoneSeconds.low * 1000);
+  $("#speed-medium-time").textContent = formatDuration(profile.zoneSeconds.medium * 1000);
+  $("#speed-high-time").textContent = formatDuration(profile.zoneSeconds.high * 1000);
+  $("#speed-panel").hidden = false;
+  setSpeedPanelExpanded(false);
+  renderSpeedGradient(route, profile);
+  syncDashboardDock();
 }
 
 function setupMapProviderSettings() {
@@ -423,8 +611,11 @@ function finishCapture() {
   finishCaptureButton.hidden = true;
   clearInterval(state.timerId);
   releaseWakeLock();
-  if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
+  const finishedPoints = [...state.track.points];
+  state.trackLine.setPoints([]);
+  if (finishedPoints.length) map.fit(finishedPoints, 35);
   showRouteSegments(segmentsForRoute(state.track));
+  showSpeedPanelForRoute(state.track);
 }
 
 function stopWatchingPosition() {
@@ -476,6 +667,8 @@ function restoreActiveTrack() {
 }
 
 function clearCaptureLayers() {
+  clearSpeedGradient();
+  hideSpeedPanel();
   clearCapturePointMarkers();
   state.trackLine.setPoints([]);
   ["currentMarker", "accuracyCircle", "captureStartMarker", "captureEndMarker"].forEach(key => {
@@ -773,8 +966,9 @@ form.addEventListener("submit", async event => {
     const route = data.routes?.[0];
     if (!route) throw new Error();
     if (state.plannedLine) map.remove(state.plannedLine);
+    clearSpeedGradient();
     const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-    state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
+    state.plannedLine = null;
     map.fit(points, 35);
     const stopNames = ["Origen", ...state.waypoints.map((_, index) => `Punto ${index + 1}`), "Destino"];
     const segments = (route.legs || []).map((leg, index) => ({
@@ -787,7 +981,7 @@ form.addEventListener("submit", async event => {
     const durationMin = Math.round(route.duration / 60);
     $("#distance").textContent = `${distanceKm.toFixed(1)} km`;
     $("#duration").textContent = durationMin >= 60 ? `${Math.floor(durationMin / 60)} h ${durationMin % 60} min` : `${durationMin} min`;
-    saveRoute({
+    const plannedRoute = {
       id: Date.now(),
       type: "planned",
       start: state.start.label,
@@ -801,14 +995,18 @@ form.addEventListener("submit", async event => {
       waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
       segments,
       points
-    });
+    };
+    saveRoute(plannedRoute);
     showRouteSegments(segments);
+    showSpeedPanelForRoute(plannedRoute);
     setMessage(state.waypoints.length ? `Ruta calculada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.` : "Ruta calculada y guardada.");
   } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
   finally { calculateButton.disabled = false; }
 });
 
 function resetPlannedPoints() {
+  clearSpeedGradient();
+  hideSpeedPanel();
   state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
   state.waypoints = [];
   state.waypointSelectionId = null;
@@ -843,7 +1041,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=20" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=21" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -885,8 +1083,9 @@ function startRouteSimulation(id) {
     SIMULATION_MAX_DURATION_MS,
     Math.max(SIMULATION_MIN_DURATION_MS, originalDurationMs / SIMULATION_COMPRESSION)
   );
-  const pendingLine = map.createPolyline(latlngs, { color: "#777777", weight: 6, opacity: 0.48, dashArray: "8 8" });
-  const completedLine = map.createPolyline([latlngs[0]], { color: "#e30613", weight: 7, opacity: 0.98 });
+  showSpeedPanelForRoute(route);
+  const pendingLine = map.createPolyline(latlngs, { color: "#777777", weight: 8, opacity: 0.16, dashArray: "8 8" });
+  const completedLine = map.createPolyline([latlngs[0]], { color: "#ffffff", weight: 3, opacity: 0.22 });
   const marker = map.createHtmlMarker(latlngs[0], vehicleMarkerOptions());
 
   state.simulation = {
@@ -1149,9 +1348,9 @@ function showRecordedRoute(id) {
   setMode("capture");
   clearCaptureLayers();
   state.track = route;
-  state.trackLine.setPoints(route.points);
+  state.trackLine.setPoints([]);
   renderCapturePointMarkers(markedPointsForRoute(route));
-  if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
+  if (route.points.length) map.fit(route.points, 35);
   $("#live-distance").textContent = formatDistance(route.distanceMeters);
   $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(route));
   $("#live-points").textContent = route.points.length;
@@ -1163,6 +1362,7 @@ function showRecordedRoute(id) {
   markCapturePointButton.hidden = true;
   finishCaptureButton.hidden = true;
   showRouteSegments(segmentsForRoute(route));
+  showSpeedPanelForRoute(route);
 }
 
 function showPlannedRoute(id) {
@@ -1187,19 +1387,22 @@ function showPlannedRoute(id) {
   })).filter(waypoint => Number.isFinite(waypoint.point.lat) && Number.isFinite(waypoint.point.lng));
   renderWaypointRows();
   refreshWaypointMarkers();
-  state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
+  state.plannedLine = null;
   map.fit(points, 35);
   dateInput.value = route.date;
   timeInput.value = route.time;
   $("#distance").textContent = `${route.distanceKm.toFixed(1)} km`;
   $("#duration").textContent = `${route.durationMin} min`;
   showRouteSegments(segmentsForRoute(route));
+  showSpeedPanelForRoute(route);
   setMessage("Ruta planificada cargada desde el historial.");
 }
 
 function deleteRoute(id) {
   if (state.simulation?.route.id === id) closeSimulation();
   hideRouteSegments();
+  hideSpeedPanel();
+  clearSpeedGradient();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
   renderHistory();
 }
@@ -1287,6 +1490,8 @@ $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
     hideRouteSegments();
+    hideSpeedPanel();
+    clearSpeedGradient();
     renderHistory();
   }
 });
@@ -1300,6 +1505,10 @@ $("#route-segments-toggle").addEventListener("click", event => {
   setRouteSegmentsExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
 });
 $("#route-segments-close").addEventListener("click", hideRouteSegments);
+$("#speed-panel-toggle").addEventListener("click", event => {
+  setSpeedPanelExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
+$("#speed-panel-close").addEventListener("click", hideSpeedPanel);
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
   setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
