@@ -9,6 +9,8 @@ const SIMULATION_COMPRESSION = 20;
 const GOOGLE_MAPS_KEY = "ruteo-google-maps-key-v1";
 const SPEED_COLORS = { low: "#E62020", medium: "#FFD700", high: "#00FF00" };
 const SPEED_GRADIENT_MAX_LAYERS = 1200;
+const GPS_SIGNAL_LOSS_TIMEOUT_MS = 18000;
+const GPS_WATCHDOG_INTERVAL_MS = 3000;
 
 async function initApp() {
 const mapContainer = document.querySelector("#map");
@@ -37,6 +39,7 @@ const state = {
   endMarker: null,
   plannedLine: null,
   watchId: null,
+  gpsWatchdogId: null,
   wakeLock: null,
   track: null,
   trackLine: map.createPolyline([], { color: "#e30613", weight: 7, opacity: 0.95 }),
@@ -386,6 +389,50 @@ function setGpsStatus(title, detail, status = "idle") {
   $("#gps-status").dataset.status = status;
 }
 
+function speedStateForTrack(track = state.track) {
+  if (!track) return null;
+  track.speedState = window.GpsSpeed.create(track.speedState);
+  return track.speedState;
+}
+
+function updateLiveSpeed() {
+  const speedState = speedStateForTrack();
+  $("#live-speed").textContent = `${(speedState?.currentSpeedKmh || 0).toFixed(1)} km/h`;
+}
+
+function enterGpsSignalLoss(detail = "No se reciben ubicaciones nuevas del dispositivo.") {
+  if (!state.track || state.track.status !== "recording") return;
+  const speedState = speedStateForTrack();
+  if (speedState.signal === "lost") return;
+  const heldSpeedKmh = window.GpsSpeed.loseSignal(speedState);
+  updateLiveSpeed();
+  setGpsStatus(
+    "Señal GPS perdida",
+    heldSpeedKmh > 0
+      ? `Manteniendo la velocidad promedio previa: ${heldSpeedKmh.toFixed(1)} km/h.`
+      : "Velocidad en 0 km/h hasta recuperar una lectura válida.",
+    "warning"
+  );
+  showMapBanner(`${detail} El recorrido sigue activo sin inventar coordenadas.`, "warning", 7000);
+  persistActiveTrack();
+}
+
+function startGpsWatchdog() {
+  stopGpsWatchdog();
+  state.gpsWatchdogId = window.setInterval(() => {
+    const speedState = speedStateForTrack();
+    if (!speedState || state.track?.status !== "recording" || !speedState.lastSignalAt) return;
+    if (Date.now() - speedState.lastSignalAt >= GPS_SIGNAL_LOSS_TIMEOUT_MS) {
+      enterGpsSignalLoss("La señal GPS dejó de actualizarse.");
+    }
+  }, GPS_WATCHDOG_INTERVAL_MS);
+}
+
+function stopGpsWatchdog() {
+  if (state.gpsWatchdogId !== null) window.clearInterval(state.gpsWatchdogId);
+  state.gpsWatchdogId = null;
+}
+
 function createTrack() {
   return {
     id: Date.now(),
@@ -398,7 +445,8 @@ function createTrack() {
     status: "recording",
     distanceMeters: 0,
     points: [],
-    markedPoints: []
+    markedPoints: [],
+    speedState: window.GpsSpeed.create()
   };
 }
 
@@ -430,6 +478,9 @@ async function startCapture() {
     maximumAge: 1000,
     timeout: 15000
   });
+  const speedState = speedStateForTrack();
+  speedState.lastSignalAt = Date.now();
+  startGpsWatchdog();
 
   state.timerId = window.setInterval(updateLiveMetrics, 1000);
   pauseCaptureButton.hidden = false;
@@ -448,7 +499,8 @@ function handlePosition(position) {
     lng: position.coords.longitude,
     accuracy: Math.round(position.coords.accuracy),
     altitude: position.coords.altitude,
-    speed: position.coords.speed,
+    speed: null,
+    rawSpeed: position.coords.speed,
     timestamp: new Date(position.timestamp).toISOString()
   };
   const latlng = { lat: point.lat, lng: point.lng };
@@ -464,8 +516,32 @@ function handlePosition(position) {
   const previous = state.track.points.at(-1);
   const distanceFromPrevious = previous ? distanceBetween(previous, latlng) : Infinity;
   const secondsFromPrevious = previous ? (position.timestamp - new Date(previous.timestamp).getTime()) / 1000 : Infinity;
+  const reportedSpeedMs = Number(position.coords.speed);
+  const hasReportedSpeed = position.coords.speed !== null && Number.isFinite(reportedSpeedMs) && reportedSpeedMs >= 0;
+  const derivedSpeedKmh = previous && secondsFromPrevious > 0 ? distanceFromPrevious / secondsFromPrevious * 3.6 : 0;
+  const rawSpeedKmh = hasReportedSpeed ? reportedSpeedMs * 3.6 : derivedSpeedKmh;
+  const speedState = speedStateForTrack();
+  const lostBeforeReading = speedState.signal === "lost";
+  const speedResult = window.GpsSpeed.record(speedState, rawSpeedKmh, {
+    timestamp: position.timestamp,
+    accuracyMeters: point.accuracy
+  });
+  point.speed = speedResult.speedKmh / 3.6;
+  point.rawSpeed = rawSpeedKmh / 3.6;
+  point.speedSource = hasReportedSpeed ? "gps" : "distance-time";
+  updateLiveSpeed();
+
+  if (lostBeforeReading) {
+    showMapBanner("Señal GPS recuperada. La velocidad se ajustará progresivamente.", "info", 5000);
+  }
+  const speedDetail = speedResult.signal === "recovering"
+    ? `Reconexión estable · velocidad ${speedResult.speedKmh.toFixed(1)} km/h`
+    : speedResult.spikeRejected
+      ? `Lectura atípica filtrada · velocidad ${speedResult.speedKmh.toFixed(1)} km/h`
+      : `Ubicación activa · velocidad ${speedResult.speedKmh.toFixed(1)} km/h`;
   if (previous && distanceFromPrevious < MIN_POINT_DISTANCE_METERS && secondsFromPrevious < 12) {
-    setGpsStatus("Grabando recorrido", `Ubicación activa · precisión ±${point.accuracy} m`, point.accuracy <= 30 ? "good" : "warning");
+    setGpsStatus(lostBeforeReading ? "Señal GPS recuperada" : "Grabando recorrido", `${speedDetail} · precisión ±${point.accuracy} m`, point.accuracy <= 30 ? "good" : "warning");
+    persistActiveTrack();
     return;
   }
 
@@ -484,7 +560,7 @@ function handlePosition(position) {
     map.panTo(latlng, { animate: true });
   }
 
-  setGpsStatus("Grabando recorrido", `Ubicación activa · precisión ±${point.accuracy} m`, point.accuracy <= 30 ? "good" : "warning");
+  setGpsStatus(lostBeforeReading ? "Señal GPS recuperada" : "Grabando recorrido", `${speedDetail} · precisión ±${point.accuracy} m`, point.accuracy <= 30 ? "good" : "warning");
   startCaptureButton.disabled = true;
   startCaptureButton.querySelector("span:last-child").textContent = "Recorrido en curso";
   updateLiveMetrics();
@@ -542,12 +618,21 @@ function markCurrentCapturePoint() {
     name: `Punto marcado ${number}`
   };
   state.track.markedPoints.push(markedPoint);
+  const speedState = speedStateForTrack();
+  const stoppedWithoutSignal = speedState.signal === "lost";
+  if (stoppedWithoutSignal) window.GpsSpeed.stop(speedState, { duringSignalLoss: true });
   renderCapturePointMarkers(state.track.markedPoints);
   updateLiveMetrics();
   persistActiveTrack();
   navigator.vibrate?.([70, 40, 70]);
-  setGpsStatus(`Punto ${number} marcado`, `${markedPoint.lat.toFixed(6)}, ${markedPoint.lng.toFixed(6)}`, state.track.status === "paused" ? "paused" : "good");
-  showMapBanner(`Punto ${number} guardado en el recorrido.`, "info", 3000);
+  setGpsStatus(
+    `Punto ${number} marcado`,
+    stoppedWithoutSignal
+      ? "Parada registrada sin señal · velocidad y promedio reiniciados a 0 km/h."
+      : `${markedPoint.lat.toFixed(6)}, ${markedPoint.lng.toFixed(6)}`,
+    stoppedWithoutSignal || state.track.status === "paused" ? "paused" : "good"
+  );
+  showMapBanner(stoppedWithoutSignal ? `Punto ${number} guardado como parada sin señal.` : `Punto ${number} guardado en el recorrido.`, "info", 3000);
 }
 
 function handlePositionError(error) {
@@ -557,10 +642,17 @@ function handlePositionError(error) {
     3: ["El GPS tardó demasiado", "Sal a un lugar abierto y vuelve a intentarlo."]
   };
   const [title, detail] = errors[error.code] || ["Error de ubicación", error.message];
+  if (error.code !== 1 && state.track?.status === "recording") {
+    enterGpsSignalLoss(detail);
+    return;
+  }
+
   setGpsStatus(title, detail, "error");
   showMapBanner(detail, "error", 7000);
   stopWatchingPosition();
   if (state.track?.status === "recording") {
+    window.GpsSpeed.stop(speedStateForTrack());
+    updateLiveSpeed();
     state.track.status = "paused";
     state.track.pausedAt = new Date().toISOString();
     persistActiveTrack();
@@ -573,6 +665,8 @@ function handlePositionError(error) {
 function pauseCapture() {
   if (!state.track || state.track.status !== "recording") return;
   stopWatchingPosition();
+  window.GpsSpeed.stop(speedStateForTrack());
+  updateLiveSpeed();
   state.track.status = "paused";
   state.track.pausedAt = new Date().toISOString();
   setGpsStatus("Recorrido pausado", "El GPS no está agregando puntos.", "paused");
@@ -589,6 +683,8 @@ function finishCapture() {
     return;
   }
   stopWatchingPosition();
+  window.GpsSpeed.stop(speedStateForTrack());
+  updateLiveSpeed();
   if (state.track.pausedAt) {
     state.track.pausedMilliseconds += Date.now() - new Date(state.track.pausedAt).getTime();
     state.track.pausedAt = null;
@@ -621,6 +717,7 @@ function finishCapture() {
 function stopWatchingPosition() {
   if (state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
   state.watchId = null;
+  stopGpsWatchdog();
   clearInterval(state.timerId);
   state.timerId = null;
 }
@@ -636,6 +733,7 @@ function updateLiveMetrics() {
   $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(state.track));
   $("#live-points").textContent = state.track.points.length;
   $("#live-marked-points").textContent = markedPointsForRoute(state.track).length;
+  updateLiveSpeed();
 }
 
 function persistActiveTrack() {
@@ -648,6 +746,8 @@ function restoreActiveTrack() {
   saved.status = "paused";
   saved.markedPoints = markedPointsForRoute(saved);
   saved.pausedAt = saved.points.at(-1).timestamp;
+  saved.speedState = window.GpsSpeed.create(saved.speedState);
+  window.GpsSpeed.stop(saved.speedState);
   state.track = saved;
   state.trackLine.setPoints(saved.points);
   const first = saved.points[0];
@@ -678,6 +778,7 @@ function clearCaptureLayers() {
   $("#live-distance").textContent = "0 m";
   $("#live-duration").textContent = "00:00";
   $("#live-accuracy").textContent = "—";
+  $("#live-speed").textContent = "0.0 km/h";
   $("#live-points").textContent = "0";
   $("#live-marked-points").textContent = "0";
 }
@@ -1041,7 +1142,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=21" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=22" alt="" aria-hidden="true">
     </div>`
   };
 }
