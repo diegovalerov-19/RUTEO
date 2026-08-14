@@ -42,6 +42,7 @@ const state = {
   accuracyCircle: null,
   captureStartMarker: null,
   captureEndMarker: null,
+  capturePointMarkers: [],
   timerId: null,
   followLocation: true,
   simulation: null,
@@ -59,6 +60,7 @@ const message = $("#message");
 const calculateButton = $("#calculate");
 const startCaptureButton = $("#start-capture");
 const pauseCaptureButton = $("#pause-capture");
+const markCapturePointButton = $("#mark-capture-point");
 const finishCaptureButton = $("#finish-capture");
 let waypointSequence = 0;
 
@@ -207,7 +209,8 @@ function createTrack() {
     pausedMilliseconds: 0,
     status: "recording",
     distanceMeters: 0,
-    points: []
+    points: [],
+    markedPoints: []
   };
 }
 
@@ -242,6 +245,8 @@ async function startCapture() {
 
   state.timerId = window.setInterval(updateLiveMetrics, 1000);
   pauseCaptureButton.hidden = false;
+  markCapturePointButton.hidden = false;
+  markCapturePointButton.disabled = !state.track.points.length;
   finishCaptureButton.hidden = false;
   $("#recenter").disabled = false;
   await requestWakeLock();
@@ -279,6 +284,7 @@ function handlePosition(position) {
   if (previous) state.track.distanceMeters += distanceFromPrevious;
   state.track.points.push(point);
   state.trackLine.addPoint(latlng);
+  markCapturePointButton.disabled = false;
 
   if (!state.captureStartMarker) {
     state.captureStartMarker = map.createCircleMarker(latlng, {
@@ -308,6 +314,52 @@ function updateCurrentLocation(latlng, accuracy) {
     state.accuracyCircle.setPosition(latlng);
     state.accuracyCircle.setRadius(accuracy);
   }
+}
+
+function markedPointsForRoute(route) {
+  return Array.isArray(route?.markedPoints) ? route.markedPoints.filter(point => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng))) : [];
+}
+
+function clearCapturePointMarkers() {
+  state.capturePointMarkers.forEach(marker => map.remove(marker));
+  state.capturePointMarkers = [];
+}
+
+function renderCapturePointMarkers(points = []) {
+  clearCapturePointMarkers();
+  markedPointsForRoute({ markedPoints: points }).forEach((point, index) => {
+    state.capturePointMarkers.push(map.createHtmlMarker(point, {
+      className: "capture-point-icon-shell",
+      size: 30,
+      zIndex: 950,
+      html: `<div class="capture-point-marker" aria-label="Punto marcado ${index + 1}">${index + 1}</div>`
+    }));
+  });
+}
+
+function markCurrentCapturePoint() {
+  if (!state.track || state.track.status === "finished") return;
+  const currentPoint = state.track.points.at(-1);
+  if (!currentPoint) {
+    showMapBanner("Espera a que el GPS registre la primera ubicación antes de marcar un punto.", "warning", 5000);
+    return;
+  }
+  state.track.markedPoints = markedPointsForRoute(state.track);
+  const number = state.track.markedPoints.length + 1;
+  const markedPoint = {
+    lat: Number(currentPoint.lat),
+    lng: Number(currentPoint.lng),
+    accuracy: currentPoint.accuracy ?? null,
+    timestamp: new Date().toISOString(),
+    name: `Punto marcado ${number}`
+  };
+  state.track.markedPoints.push(markedPoint);
+  renderCapturePointMarkers(state.track.markedPoints);
+  updateLiveMetrics();
+  persistActiveTrack();
+  navigator.vibrate?.([70, 40, 70]);
+  setGpsStatus(`Punto ${number} marcado`, `${markedPoint.lat.toFixed(6)}, ${markedPoint.lng.toFixed(6)}`, state.track.status === "paused" ? "paused" : "good");
+  showMapBanner(`Punto ${number} guardado en el recorrido.`, "info", 3000);
 }
 
 function handlePositionError(error) {
@@ -366,6 +418,8 @@ function finishCapture() {
   startCaptureButton.disabled = false;
   startCaptureButton.querySelector("span:last-child").textContent = "Iniciar otro recorrido";
   pauseCaptureButton.hidden = true;
+  markCapturePointButton.hidden = true;
+  markCapturePointButton.disabled = true;
   finishCaptureButton.hidden = true;
   clearInterval(state.timerId);
   releaseWakeLock();
@@ -390,6 +444,7 @@ function updateLiveMetrics() {
   $("#live-distance").textContent = formatDistance(state.track.distanceMeters);
   $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(state.track));
   $("#live-points").textContent = state.track.points.length;
+  $("#live-marked-points").textContent = markedPointsForRoute(state.track).length;
 }
 
 function persistActiveTrack() {
@@ -400,12 +455,14 @@ function restoreActiveTrack() {
   const saved = JSON.parse(localStorage.getItem(ACTIVE_TRACK_KEY) || "null");
   if (!saved?.points?.length) return;
   saved.status = "paused";
+  saved.markedPoints = markedPointsForRoute(saved);
   saved.pausedAt = saved.points.at(-1).timestamp;
   state.track = saved;
   state.trackLine.setPoints(saved.points);
   const first = saved.points[0];
   const last = saved.points.at(-1);
   state.captureStartMarker = map.createCircleMarker(first, { radius: 8, strokeColor: "#fff", strokeWeight: 3, fillColor: "#111111", fillOpacity: 1 });
+  renderCapturePointMarkers(saved.markedPoints);
   updateCurrentLocation(last, last.accuracy);
   map.fit(state.trackLine.getPoints(), 35);
   $("#track-name").value = saved.name;
@@ -413,10 +470,13 @@ function restoreActiveTrack() {
   setGpsStatus("Recorrido recuperado", "Pulsa continuar para volver a grabar.", "paused");
   startCaptureButton.querySelector("span:last-child").textContent = "Continuar recorrido";
   finishCaptureButton.hidden = false;
+  markCapturePointButton.hidden = false;
+  markCapturePointButton.disabled = false;
   updateLiveMetrics();
 }
 
 function clearCaptureLayers() {
+  clearCapturePointMarkers();
   state.trackLine.setPoints([]);
   ["currentMarker", "accuracyCircle", "captureStartMarker", "captureEndMarker"].forEach(key => {
     if (state[key]) map.remove(state[key]);
@@ -426,6 +486,7 @@ function clearCaptureLayers() {
   $("#live-duration").textContent = "00:00";
   $("#live-accuracy").textContent = "—";
   $("#live-points").textContent = "0";
+  $("#live-marked-points").textContent = "0";
 }
 
 async function requestWakeLock() {
@@ -447,6 +508,7 @@ document.addEventListener("visibilitychange", async () => {
 
 startCaptureButton.addEventListener("click", startCapture);
 pauseCaptureButton.addEventListener("click", pauseCapture);
+markCapturePointButton.addEventListener("click", markCurrentCapturePoint);
 finishCaptureButton.addEventListener("click", finishCapture);
 $("#recenter").addEventListener("click", () => {
   const last = state.track?.points.at(-1);
@@ -781,7 +843,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=19" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=20" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -804,6 +866,10 @@ function startRouteSimulation(id) {
   if (route.type === "recorded") {
     clearCaptureLayers();
     state.track = route;
+    renderCapturePointMarkers(markedPointsForRoute(route));
+    pauseCaptureButton.hidden = true;
+    markCapturePointButton.hidden = true;
+    finishCaptureButton.hidden = true;
   } else {
     resetPlannedPoints();
   }
@@ -1084,13 +1150,18 @@ function showRecordedRoute(id) {
   clearCaptureLayers();
   state.track = route;
   state.trackLine.setPoints(route.points);
+  renderCapturePointMarkers(markedPointsForRoute(route));
   if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
   $("#live-distance").textContent = formatDistance(route.distanceMeters);
   $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(route));
   $("#live-points").textContent = route.points.length;
+  $("#live-marked-points").textContent = markedPointsForRoute(route).length;
   setGpsStatus("Recorrido guardado", route.name, "good");
   startCaptureButton.disabled = false;
   startCaptureButton.querySelector("span:last-child").textContent = "Iniciar otro recorrido";
+  pauseCaptureButton.hidden = true;
+  markCapturePointButton.hidden = true;
+  finishCaptureButton.hidden = true;
   showRouteSegments(segmentsForRoute(route));
 }
 
@@ -1162,7 +1233,8 @@ function renderHistory() {
       return `<article class="history-card recorded">
         <div class="history-heading"><span class="kind">GPS</span><strong>${escapeHtml(route.name)}</strong></div>
         <p class="when">${formatDateTime(route.startedAt)}</p>
-        <p>${formatDistance(route.distanceMeters)} · ${formatDuration(getElapsedMilliseconds(route))} · ${route.points.length} puntos</p>
+        <p>${formatDistance(route.distanceMeters)} · ${formatDuration(getElapsedMilliseconds(route))} · ${route.points.length} puntos GPS</p>
+        ${markedPointsForRoute(route).length ? `<p><strong>Puntos marcados:</strong> ${markedPointsForRoute(route).length}</p>` : ""}
         <div class="card-actions"><button data-simulate="${route.id}">▶ Simular</button><button data-view-recorded="${route.id}">Ver en mapa</button>${exportMenu(route)}<button class="delete-route" data-delete="${route.id}">Eliminar</button></div>
       </article>`;
     }

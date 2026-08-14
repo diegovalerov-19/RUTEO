@@ -64,6 +64,8 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .waypoint-input-row .remove-waypoint { color: var(--upc-red-dark); background: #fff; }
 .waypoint-map-marker { display: grid; place-items: center; width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50%; color: #fff; background: var(--upc-red); box-shadow: 0 3px 8px #0008; font-size: .7rem; font-weight: 900; }
 .waypoint-icon-shell { display: grid !important; place-items: center; background: transparent; border: 0; }
+.capture-point-marker { display: grid; place-items: center; width: 28px; height: 28px; border: 3px solid var(--upc-red); border-radius: 50%; color: var(--black); background: var(--white); box-shadow: 0 3px 9px #0008; font-size: .66rem; font-weight: 900; }
+.capture-point-icon-shell { display: grid !important; place-items: center; background: transparent; border: 0; }
 
 .gps-status { display: flex; align-items: center; gap: 11px; margin: 17px 0 12px; padding: 13px; border: 1px solid var(--gray-300); border-left: 4px solid var(--upc-red); border-radius: 9px; background: var(--white); }
 .gps-dot { width: 11px; height: 11px; flex: 0 0 11px; border-radius: 50%; background: var(--gray-500); box-shadow: 0 0 0 5px #77777720; }
@@ -82,6 +84,7 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .live-metrics span, .summary span { display: block; margin-bottom: 4px; font-size: .68rem; }
 .live-metrics span { color: #cfcfcf; }
 .live-metrics strong { color: var(--white); font-size: 1.1rem; }
+.live-metrics div:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .capture-actions { display: grid; gap: 8px; }
 .primary-button, .secondary-button, .danger-button { width: 100%; min-height: 48px; border-radius: 9px; font-weight: 780; }
@@ -92,6 +95,9 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .button-icon { margin-right: 8px; }
 .secondary-button { border: 1px solid var(--black); color: var(--black); background: var(--white); }
 .secondary-button:hover { color: var(--white); background: var(--black); }
+.mark-point-button { width: 100%; min-height: 48px; border: 2px solid var(--upc-red); border-radius: 9px; color: var(--upc-red-dark); background: var(--white); font-weight: 820; }
+.mark-point-button:hover:not(:disabled) { color: var(--white); background: var(--upc-red); }
+.mark-point-button:disabled { border-color: var(--gray-300); color: var(--gray-500); cursor: default; }
 .danger-button { border: 0; color: var(--white); background: var(--black); }
 .danger-button:hover { background: var(--upc-red-dark); }
 .text-button { display: block; margin: 12px auto 0; border: 0; color: var(--upc-red); background: transparent; font-size: .75rem; font-weight: 780; }
