@@ -7,6 +7,10 @@
     return (route?.points || []).filter(point => Number.isFinite(point?.lat) && Number.isFinite(point?.lng));
   }
 
+  function markedPoints(route) {
+    return (route?.markedPoints || []).filter(point => Number.isFinite(Number(point?.lat)) && Number.isFinite(Number(point?.lng)));
+  }
+
   function routeName(route) {
     return route.type === "recorded" ? route.name : `${route.start} - ${route.end}`;
   }
@@ -25,13 +29,18 @@
   }
 
   function buildCsv(route) {
-    const headers = ["recorrido", "tipo", "secuencia", "latitud", "longitud", "fecha_hora", "precision_m", "altitud_m", "velocidad_m_s"];
+    const headers = ["recorrido", "tipo", "secuencia", "latitud", "longitud", "fecha_hora", "precision_m", "altitud_m", "velocidad_m_s", "clase_punto", "nombre_punto"];
     const rows = routePoints(route).map((point, index) => [
       routeName(route), route.type === "recorded" ? "GPS" : "PLANIFICADA", index + 1,
       Number(point.lat).toFixed(7), Number(point.lng).toFixed(7), point.timestamp || "",
-      point.accuracy ?? "", point.altitude ?? "", point.speed ?? ""
+      point.accuracy ?? "", point.altitude ?? "", point.speed ?? "", "TRAZA", ""
     ]);
-    return `\uFEFF${[headers, ...rows].map(row => row.map(csvCell).join(",")).join("\r\n")}`;
+    const markedRows = markedPoints(route).map((point, index) => [
+      routeName(route), "PUNTO_MARCADO", index + 1,
+      Number(point.lat).toFixed(7), Number(point.lng).toFixed(7), point.timestamp || "",
+      point.accuracy ?? "", "", "", "MARCADO", point.name || `Punto marcado ${index + 1}`
+    ]);
+    return `\uFEFF${[headers, ...rows, ...markedRows].map(row => row.map(csvCell).join(",")).join("\r\n")}`;
   }
 
   function xmlEscape(value) {
@@ -42,7 +51,14 @@
 
   function buildKml(route) {
     const points = routePoints(route);
+    const marked = markedPoints(route);
     const coordinates = points.map(point => `${Number(point.lng).toFixed(7)},${Number(point.lat).toFixed(7)},${Number(point.altitude) || 0}`).join("\n          ");
+    const markedPlacemarks = marked.map((point, index) => `
+    <Placemark>
+      <name>${xmlEscape(point.name || `Punto marcado ${index + 1}`)}</name>
+      <description>${xmlEscape(`Marcado durante la grabación${point.timestamp ? ` · ${point.timestamp}` : ""}`)}</description>
+      <Point><coordinates>${Number(point.lng).toFixed(7)},${Number(point.lat).toFixed(7)},0</coordinates></Point>
+    </Placemark>`).join("");
     const startedAt = route.startedAt || (route.date && route.time ? `${route.date}T${route.time}:00` : "");
     const distanceMeters = route.distanceMeters ?? (Number(route.distanceKm) * 1000);
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -57,6 +73,7 @@
         <Data name="fecha_hora"><value>${xmlEscape(startedAt)}</value></Data>
         <Data name="distancia_m"><value>${Number.isFinite(distanceMeters) ? Math.round(distanceMeters) : ""}</value></Data>
         <Data name="puntos"><value>${points.length}</value></Data>
+        <Data name="puntos_marcados"><value>${marked.length}</value></Data>
       </ExtendedData>
       <styleUrl>#ruta-upc</styleUrl>
       <LineString><tessellate>1</tessellate><altitudeMode>clampToGround</altitudeMode>
@@ -65,6 +82,7 @@
         </coordinates>
       </LineString>
     </Placemark>
+    ${markedPlacemarks}
   </Document>
 </kml>`;
   }
@@ -123,7 +141,8 @@
       { name: "FECHA_HORA", type: "C", length: 24, decimals: 0, value: startedAt },
       { name: "DIST_KM", type: "N", length: 12, decimals: 3, value: Number(distanceKm || 0).toFixed(3) },
       { name: "DUR_MIN", type: "N", length: 12, decimals: 2, value: Number(durationMin || 0).toFixed(2) },
-      { name: "PUNTOS", type: "N", length: 8, decimals: 0, value: String(points.length) }
+      { name: "PUNTOS", type: "N", length: 8, decimals: 0, value: String(points.length) },
+      { name: "MARCADOS", type: "N", length: 8, decimals: 0, value: String(markedPoints(route).length) }
     ];
     const headerLength = 32 + fields.length * 32 + 1;
     const recordLength = 1 + fields.reduce((sum, field) => sum + field.length, 0);
@@ -275,5 +294,5 @@
     throw new Error("Formato de descarga no reconocido.");
   }
 
-  global.RouteExport = { download, buildCsv, buildKml, buildShapefileZip, routePoints };
+  global.RouteExport = { download, buildCsv, buildKml, buildShapefileZip, routePoints, markedPoints };
 })(typeof window === "undefined" ? globalThis : window);
