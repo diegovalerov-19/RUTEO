@@ -7,6 +7,8 @@ const SIMULATION_MIN_DURATION_MS = 12000;
 const SIMULATION_MAX_DURATION_MS = 90000;
 const SIMULATION_COMPRESSION = 20;
 const GOOGLE_MAPS_KEY = "ruteo-google-maps-key-v1";
+const SPEED_COLORS = { low: "#E62020", medium: "#FFD700", high: "#00FF00" };
+const SPEED_GRADIENT_MAX_LAYERS = 1200;
 
 async function initApp() {
 const mapContainer = document.querySelector("#map");
@@ -46,7 +48,9 @@ const state = {
   timerId: null,
   followLocation: true,
   simulation: null,
-  routeSegments: []
+  routeSegments: [],
+  speedProfile: null,
+  speedGradientLayers: []
 };
 
 const $ = selector => document.querySelector(selector);
@@ -76,6 +80,8 @@ function setMode(mode) {
   if (state.mode !== mode) {
     closeSimulation();
     hideRouteSegments();
+    hideSpeedPanel();
+    clearSpeedGradient();
   }
   state.mode = mode;
   document.querySelectorAll(".mode-tab").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
@@ -98,7 +104,10 @@ function showMapBanner(text, type = "info", duration = 4500) {
 function syncDashboardDock() {
   const dock = $("#map-dashboard-dock");
   if (!dock) return;
-  dock.classList.toggle("has-visible-dashboard", [...dock.children].some(control => !control.hidden));
+  const metricsStack = $("#map-metrics-stack");
+  metricsStack.hidden = $("#route-segments-panel").hidden && $("#speed-panel").hidden;
+  metricsStack.classList.toggle("expanded", $("#route-segments-panel").classList.contains("expanded") || $("#speed-panel").classList.contains("expanded"));
+  dock.classList.toggle("has-visible-dashboard", !metricsStack.hidden || !$("#simulation-show").hidden || !$("#simulation-panel").hidden);
 }
 
 function setRouteSegmentsExpanded(expanded) {
@@ -108,7 +117,13 @@ function setRouteSegmentsExpanded(expanded) {
   panel.classList.toggle("expanded", expanded);
   body.hidden = !expanded;
   toggle.setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#speed-panel").classList.remove("expanded");
+    $("#speed-panel-body").hidden = true;
+    $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+  }
   if (expanded && state.simulation) setSimulationPanelVisible(false);
+  syncDashboardDock();
 }
 
 function hideRouteSegments() {
@@ -151,6 +166,166 @@ function segmentsForRoute(route) {
   const durationSeconds = Number(durationMilliseconds / 1000);
   if (!Number.isFinite(distanceMeters) || !Number.isFinite(durationSeconds)) return [];
   return [{ from: recorded ? "Inicio" : "Origen", to: recorded ? "Fin" : "Destino", distanceMeters, durationSeconds }];
+}
+
+function speedZoneFor(speedKmh) {
+  if (speedKmh > 35) return "high";
+  if (speedKmh > 15) return "medium";
+  return "low";
+}
+
+function speedProfileForRoute(route) {
+  if (!route) return null;
+  let segments = [];
+  if (route.type === "recorded") {
+    const points = window.RouteExport.routePoints(route);
+    for (let index = 1; index < points.length; index += 1) {
+      const from = points[index - 1];
+      const to = points[index];
+      const distanceMeters = distanceBetween(from, to);
+      const elapsedSeconds = (new Date(to.timestamp).getTime() - new Date(from.timestamp).getTime()) / 1000;
+      const gpsSpeedMs = Number(to.speed);
+      const hasGpsSpeed = to.speed !== null && to.speed !== undefined && Number.isFinite(gpsSpeedMs) && gpsSpeedMs >= 0;
+      const durationSeconds = Number.isFinite(elapsedSeconds) && elapsedSeconds > 0
+        ? elapsedSeconds
+        : hasGpsSpeed && gpsSpeedMs > 0 ? distanceMeters / gpsSpeedMs : 0;
+      segments.push({ distanceMeters, durationSeconds, speedKmh: hasGpsSpeed ? gpsSpeedMs * 3.6 : null });
+    }
+
+    let pausedSeconds = Math.max(0, Number(route.pausedMilliseconds || 0) / 1000);
+    [...segments.keys()].sort((left, right) => segments[right].durationSeconds - segments[left].durationSeconds).forEach(index => {
+      if (pausedSeconds <= 0) return;
+      const removable = Math.min(pausedSeconds, Math.max(0, segments[index].durationSeconds - 0.1));
+      segments[index].durationSeconds -= removable;
+      pausedSeconds -= removable;
+    });
+    segments = segments.map(segment => ({
+      ...segment,
+      speedKmh: Number.isFinite(segment.speedKmh) ? segment.speedKmh : segment.durationSeconds > 0 ? segment.distanceMeters / segment.durationSeconds * 3.6 : 0
+    }));
+  } else {
+    segments = segmentsForRoute(route).map(segment => {
+      const distanceMeters = Number(segment.distanceMeters) || 0;
+      const durationSeconds = Number(segment.durationSeconds) || 0;
+      return { distanceMeters, durationSeconds, speedKmh: durationSeconds > 0 ? distanceMeters / durationSeconds * 3.6 : 0 };
+    });
+  }
+
+  segments = segments.filter(segment => Number.isFinite(segment.speedKmh) && Number.isFinite(segment.durationSeconds));
+  if (!segments.length) return null;
+  const totalDistanceMeters = segments.reduce((sum, segment) => sum + segment.distanceMeters, 0);
+  const totalDurationSeconds = segments.reduce((sum, segment) => sum + segment.durationSeconds, 0);
+  const averageSpeedKmh = totalDurationSeconds > 0 ? totalDistanceMeters / totalDurationSeconds * 3.6 : 0;
+  const zoneSeconds = { low: 0, medium: 0, high: 0 };
+  segments.forEach(segment => { zoneSeconds[speedZoneFor(segment.speedKmh)] += segment.durationSeconds; });
+  return { averageSpeedKmh, totalDistanceMeters, totalDurationSeconds, zoneSeconds, segments };
+}
+
+function mixHexColors(from, to, ratio) {
+  const read = value => [1, 3, 5].map(index => Number.parseInt(value.slice(index, index + 2), 16));
+  const start = read(from);
+  const end = read(to);
+  return `#${start.map((value, index) => Math.round(value + (end[index] - value) * ratio).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function interpolatePoint(from, to, ratio) {
+  return { lat: from.lat + (to.lat - from.lat) * ratio, lng: from.lng + (to.lng - from.lng) * ratio };
+}
+
+function clearSpeedGradient() {
+  state.speedGradientLayers.forEach(layer => map.remove(layer));
+  state.speedGradientLayers = [];
+}
+
+function renderSpeedGradient(route, profile) {
+  clearSpeedGradient();
+  const points = window.RouteExport.routePoints(route);
+  if (points.length < 2 || !profile) return;
+  let speeds;
+  if (route.type === "recorded" && profile.segments.length === points.length - 1) {
+    speeds = profile.segments.map(segment => segment.speedKmh);
+  } else if (profile.segments.length > 1) {
+    const segmentLimits = [];
+    profile.segments.reduce((distance, segment) => {
+      segmentLimits.push(distance + segment.distanceMeters);
+      return distance + segment.distanceMeters;
+    }, 0);
+    const geometryDistances = points.slice(1).map((point, index) => distanceBetween(points[index], point));
+    const geometryDistance = geometryDistances.reduce((sum, distance) => sum + distance, 0);
+    let travelled = 0;
+    speeds = geometryDistances.map(pieceDistance => {
+      const midpoint = travelled + pieceDistance / 2;
+      travelled += pieceDistance;
+      const proportionalDistance = geometryDistance > 0 ? midpoint / geometryDistance * profile.totalDistanceMeters : midpoint;
+      const segmentIndex = segmentLimits.findIndex(limit => proportionalDistance <= limit);
+      return profile.segments[segmentIndex < 0 ? profile.segments.length - 1 : segmentIndex].speedKmh;
+    });
+  } else {
+    speeds = Array(points.length - 1).fill(profile.averageSpeedKmh);
+  }
+  const colors = speeds.map(speed => SPEED_COLORS[speedZoneFor(speed)]);
+  if (colors.every(color => color === colors[0])) {
+    state.speedGradientLayers.push(map.createPolyline(points, { color: colors[0], weight: 7, opacity: 0.96 }));
+    return;
+  }
+
+  const steps = Math.max(1, Math.min(6, Math.floor(SPEED_GRADIENT_MAX_LAYERS / colors.length)));
+  colors.forEach((color, index) => {
+    const startColor = index ? mixHexColors(colors[index - 1], color, 0.5) : color;
+    const endColor = index < colors.length - 1 ? mixHexColors(color, colors[index + 1], 0.5) : color;
+    for (let step = 0; step < steps; step += 1) {
+      const startRatio = step / steps;
+      const endRatio = (step + 1) / steps;
+      state.speedGradientLayers.push(map.createPolyline([
+        interpolatePoint(points[index], points[index + 1], startRatio),
+        interpolatePoint(points[index], points[index + 1], endRatio)
+      ], {
+        color: mixHexColors(startColor, endColor, (startRatio + endRatio) / 2),
+        weight: 7,
+        opacity: 0.96
+      }));
+    }
+  });
+}
+
+function setSpeedPanelExpanded(expanded) {
+  const panel = $("#speed-panel");
+  panel.classList.toggle("expanded", expanded);
+  $("#speed-panel-body").hidden = !expanded;
+  $("#speed-panel-toggle").setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#route-segments-panel").classList.remove("expanded");
+    $("#route-segments-body").hidden = true;
+    $("#route-segments-toggle").setAttribute("aria-expanded", "false");
+    if (state.simulation) setSimulationPanelVisible(false);
+  }
+  syncDashboardDock();
+}
+
+function hideSpeedPanel() {
+  state.speedProfile = null;
+  setSpeedPanelExpanded(false);
+  $("#speed-panel").hidden = true;
+  syncDashboardDock();
+}
+
+function showSpeedPanelForRoute(route) {
+  const profile = speedProfileForRoute(route);
+  if (!profile) {
+    hideSpeedPanel();
+    clearSpeedGradient();
+    return;
+  }
+  state.speedProfile = profile;
+  $("#speed-panel-summary").textContent = `${profile.averageSpeedKmh.toFixed(1)} km/h`;
+  $("#speed-average-value").textContent = `${profile.averageSpeedKmh.toFixed(1)} km/h`;
+  $("#speed-low-time").textContent = formatDuration(profile.zoneSeconds.low * 1000);
+  $("#speed-medium-time").textContent = formatDuration(profile.zoneSeconds.medium * 1000);
+  $("#speed-high-time").textContent = formatDuration(profile.zoneSeconds.high * 1000);
+  $("#speed-panel").hidden = false;
+  setSpeedPanelExpanded(false);
+  renderSpeedGradient(route, profile);
+  syncDashboardDock();
 }
 
 function setupMapProviderSettings() {
@@ -311,607 +486,7 @@ function updateCurrentLocation(latlng, accuracy) {
     state.accuracyCircle = map.createCircle(latlng, { radius: accuracy, strokeColor: "#e30613", strokeWeight: 1, fillOpacity: 0.08 });
   } else {
     state.currentMarker.setPosition(latlng);
-    state.accuracyCircle.setPosition(latlng);
-    state.accuracyCircle.setRadius(accuracy);
-  }
-}
-
-function markedPointsForRoute(route) {
-  return Array.isArray(route?.markedPoints) ? route.markedPoints.filter(point => Number.isFinite(Number(point.lat)) && Number.isFinite(Number(point.lng))) : [];
-}
-
-function clearCapturePointMarkers() {
-  state.capturePointMarkers.forEach(marker => map.remove(marker));
-  state.capturePointMarkers = [];
-}
-
-function renderCapturePointMarkers(points = []) {
-  clearCapturePointMarkers();
-  markedPointsForRoute({ markedPoints: points }).forEach((point, index) => {
-    state.capturePointMarkers.push(map.createHtmlMarker(point, {
-      className: "capture-point-icon-shell",
-      size: 30,
-      zIndex: 950,
-      html: `<div class="capture-point-marker" aria-label="Punto marcado ${index + 1}">${index + 1}</div>`
-    }));
-  });
-}
-
-function markCurrentCapturePoint() {
-  if (!state.track || state.track.status === "finished") return;
-  const currentPoint = state.track.points.at(-1);
-  if (!currentPoint) {
-    showMapBanner("Espera a que el GPS registre la primera ubicación antes de marcar un punto.", "warning", 5000);
-    return;
-  }
-  state.track.markedPoints = markedPointsForRoute(state.track);
-  const number = state.track.markedPoints.length + 1;
-  const markedPoint = {
-    lat: Number(currentPoint.lat),
-    lng: Number(currentPoint.lng),
-    accuracy: currentPoint.accuracy ?? null,
-    timestamp: new Date().toISOString(),
-    name: `Punto marcado ${number}`
-  };
-  state.track.markedPoints.push(markedPoint);
-  renderCapturePointMarkers(state.track.markedPoints);
-  updateLiveMetrics();
-  persistActiveTrack();
-  navigator.vibrate?.([70, 40, 70]);
-  setGpsStatus(`Punto ${number} marcado`, `${markedPoint.lat.toFixed(6)}, ${markedPoint.lng.toFixed(6)}`, state.track.status === "paused" ? "paused" : "good");
-  showMapBanner(`Punto ${number} guardado en el recorrido.`, "info", 3000);
-}
-
-function handlePositionError(error) {
-  const errors = {
-    1: ["Permiso de ubicación bloqueado", "En Android abre Ajustes → Aplicaciones → Chrome → Permisos → Ubicación → Permitir mientras se usa."],
-    2: ["No se encuentra la ubicación", "Activa el GPS y el modo de ubicación de alta precisión."],
-    3: ["El GPS tardó demasiado", "Sal a un lugar abierto y vuelve a intentarlo."]
-  };
-  const [title, detail] = errors[error.code] || ["Error de ubicación", error.message];
-  setGpsStatus(title, detail, "error");
-  showMapBanner(detail, "error", 7000);
-  stopWatchingPosition();
-  if (state.track?.status === "recording") {
-    state.track.status = "paused";
-    state.track.pausedAt = new Date().toISOString();
-    persistActiveTrack();
-  }
-  startCaptureButton.disabled = false;
-  startCaptureButton.querySelector("span:last-child").textContent = state.track?.points.length ? "Continuar recorrido" : "Reintentar GPS";
-  pauseCaptureButton.hidden = true;
-}
-
-function pauseCapture() {
-  if (!state.track || state.track.status !== "recording") return;
-  stopWatchingPosition();
-  state.track.status = "paused";
-  state.track.pausedAt = new Date().toISOString();
-  setGpsStatus("Recorrido pausado", "El GPS no está agregando puntos.", "paused");
-  startCaptureButton.disabled = false;
-  startCaptureButton.querySelector("span:last-child").textContent = "Continuar recorrido";
-  pauseCaptureButton.hidden = true;
-  releaseWakeLock();
-  persistActiveTrack();
-}
-
-function finishCapture() {
-  if (!state.track || state.track.points.length < 2) {
-    showMapBanner("Avanza unos metros para registrar al menos dos puntos GPS.", "warning");
-    return;
-  }
-  stopWatchingPosition();
-  if (state.track.pausedAt) {
-    state.track.pausedMilliseconds += Date.now() - new Date(state.track.pausedAt).getTime();
-    state.track.pausedAt = null;
-  }
-  state.track.status = "finished";
-  state.track.endedAt = new Date().toISOString();
-  const finalPoint = state.track.points.at(-1);
-  state.captureEndMarker = map.createCircleMarker(finalPoint, {
-    radius: 8, strokeColor: "#fff", strokeWeight: 3, fillColor: "#e30613", fillOpacity: 1, title: "Fin del recorrido"
-  });
-  saveRoute(state.track);
-  localStorage.removeItem(ACTIVE_TRACK_KEY);
-  navigator.vibrate?.([100, 70, 160]);
-  setGpsStatus("Recorrido guardado", `${formatDistance(state.track.distanceMeters)} registrados correctamente.`, "good");
-  startCaptureButton.disabled = false;
-  startCaptureButton.querySelector("span:last-child").textContent = "Iniciar otro recorrido";
-  pauseCaptureButton.hidden = true;
-  markCapturePointButton.hidden = true;
-  markCapturePointButton.disabled = true;
-  finishCaptureButton.hidden = true;
-  clearInterval(state.timerId);
-  releaseWakeLock();
-  if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
-  showRouteSegments(segmentsForRoute(state.track));
-}
-
-function stopWatchingPosition() {
-  if (state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
-  state.watchId = null;
-  clearInterval(state.timerId);
-  state.timerId = null;
-}
-
-function getElapsedMilliseconds(track) {
-  const end = track.status === "finished" ? new Date(track.endedAt).getTime() : track.pausedAt ? new Date(track.pausedAt).getTime() : Date.now();
-  return Math.max(0, end - new Date(track.startedAt).getTime() - track.pausedMilliseconds);
-}
-
-function updateLiveMetrics() {
-  if (!state.track) return;
-  $("#live-distance").textContent = formatDistance(state.track.distanceMeters);
-  $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(state.track));
-  $("#live-points").textContent = state.track.points.length;
-  $("#live-marked-points").textContent = markedPointsForRoute(state.track).length;
-}
-
-function persistActiveTrack() {
-  if (state.track && state.track.status !== "finished") localStorage.setItem(ACTIVE_TRACK_KEY, JSON.stringify(state.track));
-}
-
-function restoreActiveTrack() {
-  const saved = JSON.parse(localStorage.getItem(ACTIVE_TRACK_KEY) || "null");
-  if (!saved?.points?.length) return;
-  saved.status = "paused";
-  saved.markedPoints = markedPointsForRoute(saved);
-  saved.pausedAt = saved.points.at(-1).timestamp;
-  state.track = saved;
-  state.trackLine.setPoints(saved.points);
-  const first = saved.points[0];
-  const last = saved.points.at(-1);
-  state.captureStartMarker = map.createCircleMarker(first, { radius: 8, strokeColor: "#fff", strokeWeight: 3, fillColor: "#111111", fillOpacity: 1 });
-  renderCapturePointMarkers(saved.markedPoints);
-  updateCurrentLocation(last, last.accuracy);
-  map.fit(state.trackLine.getPoints(), 35);
-  $("#track-name").value = saved.name;
-  $("#live-accuracy").textContent = `±${last.accuracy} m`;
-  setGpsStatus("Recorrido recuperado", "Pulsa continuar para volver a grabar.", "paused");
-  startCaptureButton.querySelector("span:last-child").textContent = "Continuar recorrido";
-  finishCaptureButton.hidden = false;
-  markCapturePointButton.hidden = false;
-  markCapturePointButton.disabled = false;
-  updateLiveMetrics();
-}
-
-function clearCaptureLayers() {
-  clearCapturePointMarkers();
-  state.trackLine.setPoints([]);
-  ["currentMarker", "accuracyCircle", "captureStartMarker", "captureEndMarker"].forEach(key => {
-    if (state[key]) map.remove(state[key]);
-    state[key] = null;
-  });
-  $("#live-distance").textContent = "0 m";
-  $("#live-duration").textContent = "00:00";
-  $("#live-accuracy").textContent = "—";
-  $("#live-points").textContent = "0";
-  $("#live-marked-points").textContent = "0";
-}
-
-async function requestWakeLock() {
-  if (!("wakeLock" in navigator)) return;
-  try { state.wakeLock = await navigator.wakeLock.request("screen"); } catch { /* Android puede denegarlo por ahorro de batería. */ }
-}
-
-async function releaseWakeLock() {
-  try { await state.wakeLock?.release(); } catch { /* Ya estaba liberado. */ }
-  state.wakeLock = null;
-}
-
-document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState === "visible" && state.track?.status === "recording") {
-    await requestWakeLock();
-    showMapBanner("Ruteo volvió al primer plano. Verifica que el GPS siga grabando.", "info");
-  }
-});
-
-startCaptureButton.addEventListener("click", startCapture);
-pauseCaptureButton.addEventListener("click", pauseCapture);
-markCapturePointButton.addEventListener("click", markCurrentCapturePoint);
-finishCaptureButton.addEventListener("click", finishCapture);
-$("#recenter").addEventListener("click", () => {
-  const last = state.track?.points.at(-1);
-  if (!last) return;
-  state.followLocation = true;
-  map.setView(last, Math.max(map.getZoom(), 17));
-});
-
-map.on("dragstart", () => { if (state.track?.status === "recording") state.followLocation = false; });
-
-function setMessage(text = "") { message.textContent = text; }
-
-function parseCoordinates(query) {
-  const match = query.trim().replace(/[()]/g, "").match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
-  if (!match) return null;
-  const lat = Number(match[1]);
-  const lng = Number(match[2]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return { point: { lat, lng }, label: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
-}
-
-function getWaypoint(id) {
-  return state.waypoints.find(waypoint => waypoint.id === String(id));
-}
-
-function refreshWaypointMarkers() {
-  state.waypoints.forEach((waypoint, index) => {
-    if (waypoint.marker) map.remove(waypoint.marker);
-    waypoint.marker = null;
-    if (!waypoint.point) return;
-    waypoint.marker = map.createHtmlMarker(waypoint.point, {
-      className: "waypoint-icon-shell",
-      size: 30,
-      zIndex: 900,
-      html: `<div class="waypoint-map-marker" aria-label="Punto obligatorio ${index + 1}">${index + 1}</div>`
-    });
-  });
-}
-
-function renderWaypointRows() {
-  waypointsList.innerHTML = state.waypoints.map((waypoint, index) => `<div class="waypoint-row">
-    <label for="waypoint-${waypoint.id}">Punto obligatorio ${index + 1}</label>
-    <div class="waypoint-input-row">
-      <input id="waypoint-${waypoint.id}" data-waypoint-input="${waypoint.id}" value="${escapeHtml(waypoint.label || "")}" placeholder="Latitud, longitud o dirección">
-      <button type="button" data-search-waypoint="${waypoint.id}" aria-label="Buscar punto obligatorio ${index + 1}">⌕</button>
-      <button type="button" data-map-waypoint="${waypoint.id}" aria-label="Colocar punto obligatorio ${index + 1} en el mapa">◎</button>
-      <button class="remove-waypoint" type="button" data-remove-waypoint="${waypoint.id}" aria-label="Eliminar punto obligatorio ${index + 1}">×</button>
-    </div>
-  </div>`).join("");
-
-  document.querySelectorAll("[data-waypoint-input]").forEach(input => input.addEventListener("input", event => {
-    const waypoint = getWaypoint(event.currentTarget.dataset.waypointInput);
-    if (waypoint) waypoint.label = event.currentTarget.value;
-  }));
-  document.querySelectorAll("[data-search-waypoint]").forEach(button => button.addEventListener("click", () => searchPlace("waypoint", button.dataset.searchWaypoint)));
-  document.querySelectorAll("[data-map-waypoint]").forEach(button => button.addEventListener("click", () => selectWaypointOnMap(button.dataset.mapWaypoint)));
-  document.querySelectorAll("[data-remove-waypoint]").forEach(button => button.addEventListener("click", () => removeWaypoint(button.dataset.removeWaypoint)));
-}
-
-function selectWaypointOnMap(id) {
-  const waypoint = getWaypoint(id);
-  if (!waypoint) return;
-  state.waypointSelectionId = waypoint.id;
-  state.pointSelectionType = null;
-  const index = state.waypoints.indexOf(waypoint) + 1;
-  setMessage(`Toca el mapa para colocar el punto obligatorio ${index}.`);
-}
-
-function selectPointOnMap(type) {
-  state.pointSelectionType = type;
-  state.waypointSelectionId = null;
-  setMessage(`Toca el mapa para colocar el ${type === "start" ? "punto de partida" : "punto final"}.`);
-  scrollToSimulationMap();
-}
-
-function useCurrentLocation(type) {
-  const button = document.querySelector(`[data-current-location="${type}"]`);
-  if (!navigator.geolocation) {
-    setMessage("Este navegador o dispositivo no permite consultar la ubicación.");
-    return;
-  }
-
-  button.disabled = true;
-  button.textContent = "…";
-  setMessage("Buscando tu ubicación actual… Acepta el permiso de ubicación del navegador.");
-  navigator.geolocation.getCurrentPosition(position => {
-    const point = { lat: position.coords.latitude, lng: position.coords.longitude };
-    const label = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
-    setPoint(type, point, label);
-    state.pointSelectionType = null;
-    state.waypointSelectionId = null;
-    map.setView(point, Math.max(map.getZoom(), 17));
-    button.disabled = false;
-    button.textContent = "GPS";
-    setMessage(`Tu ubicación actual se estableció como ${type === "start" ? "punto de partida" : "punto final"}.`);
-  }, error => {
-    const messages = {
-      1: "Debes permitir el acceso a la ubicación para usar este botón.",
-      2: "No fue posible encontrar tu ubicación. Activa el GPS del dispositivo.",
-      3: "La ubicación tardó demasiado. Intenta nuevamente en un lugar abierto."
-    };
-    button.disabled = false;
-    button.textContent = "GPS";
-    setMessage(messages[error.code] || "No fue posible consultar tu ubicación actual.");
-  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
-}
-
-function addWaypoint(point = null, label = "", selectOnMap = true) {
-  if (state.waypoints.length >= 8) return setMessage("Puedes agregar hasta 8 puntos obligatorios por ruta.");
-  const waypoint = { id: String(++waypointSequence), point, label, marker: null };
-  state.waypoints.push(waypoint);
-  renderWaypointRows();
-  refreshWaypointMarkers();
-  if (selectOnMap) selectWaypointOnMap(waypoint.id);
-  return waypoint;
-}
-
-function removeWaypoint(id) {
-  const waypoint = getWaypoint(id);
-  if (!waypoint) return;
-  if (waypoint.marker) map.remove(waypoint.marker);
-  state.waypoints = state.waypoints.filter(item => item.id !== waypoint.id);
-  if (state.waypointSelectionId === waypoint.id) state.waypointSelectionId = null;
-  renderWaypointRows();
-  refreshWaypointMarkers();
-  setMessage(state.waypoints.length ? "Puntos obligatorios reordenados." : "Ya no hay puntos obligatorios.");
-}
-
-function setWaypoint(id, latlng, label) {
-  const waypoint = getWaypoint(id);
-  if (!waypoint) return;
-  waypoint.point = { lat: Number(latlng.lat), lng: Number(latlng.lng) };
-  waypoint.label = label;
-  renderWaypointRows();
-  refreshWaypointMarkers();
-}
-
-function setPoint(type, latlng, label) {
-  const isStart = type === "start";
-  const markerKey = isStart ? "startMarker" : "endMarker";
-  if (state[markerKey]) map.remove(state[markerKey]);
-  state[type] = { lat: latlng.lat, lng: latlng.lng, label };
-  state[markerKey] = map.createCircleMarker(latlng, {
-    radius: 9,
-    strokeColor: "#ffffff",
-    strokeWeight: 3,
-    fillColor: isStart ? "#111111" : "#e30613",
-    fillOpacity: 1,
-    title: isStart ? "Punto de partida" : "Punto final"
-  });
-  (isStart ? startInput : endInput).value = label;
-}
-
-map.on("click", latlng => {
-  if (state.mode !== "plan") return;
-  if (state.pointSelectionType) {
-    const type = state.pointSelectionType;
-    setPoint(type, latlng, `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`);
-    state.pointSelectionType = null;
-    setMessage(type === "start" ? "Punto de partida colocado en el mapa." : "Punto final colocado en el mapa.");
-    return;
-  }
-  if (state.waypointSelectionId) {
-    const waypoint = getWaypoint(state.waypointSelectionId);
-    const index = state.waypoints.indexOf(waypoint) + 1;
-    setWaypoint(state.waypointSelectionId, latlng, `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`);
-    state.waypointSelectionId = null;
-    setMessage(`Punto obligatorio ${index} colocado. La ruta respetará este orden.`);
-    return;
-  }
-  const type = !state.start ? "start" : !state.end ? "end" : null;
-  if (!type) {
-    const label = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-    const waypoint = addWaypoint(latlng, label, false);
-    if (waypoint) {
-      const index = state.waypoints.indexOf(waypoint) + 1;
-      setMessage(`Punto obligatorio ${index} agregado desde el mapa. Toca otro lugar para añadir el siguiente.`);
-    }
-    return;
-  }
-  setPoint(type, latlng, `${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`);
-  setMessage(type === "start" ? "Ahora selecciona el punto final." : "Puntos listos para calcular.");
-});
-
-async function searchPlace(type, waypointId = null) {
-  const input = type === "waypoint" ? document.querySelector(`[data-waypoint-input="${waypointId}"]`) : type === "start" ? startInput : endInput;
-  const query = input.value.trim();
-  if (!query) {
-    setMessage("Escribe una dirección o unas coordenadas para buscarla.");
-    return false;
-  }
-  const assignPoint = (point, label) => {
-    if (type === "waypoint") {
-      setWaypoint(waypointId, point, label);
-      state.waypointSelectionId = null;
-    } else {
-      setPoint(type, point, label);
-      state.pointSelectionType = null;
-    }
-  };
-  const coordinates = parseCoordinates(query);
-  if (coordinates) {
-    assignPoint(coordinates.point, coordinates.label);
-    map.setView(coordinates.point, 16);
-    setMessage(type === "waypoint" ? "Coordenadas del punto obligatorio guardadas." : "Coordenadas encontradas.");
-    return true;
-  }
-  setMessage("Buscando ubicación…");
-  try {
-    let googleResult = null;
-    try { googleResult = await map.geocode(query); } catch { /* Usa el buscador de respaldo. */ }
-    if (googleResult) {
-      assignPoint(googleResult.point, googleResult.label);
-      map.setView(googleResult.point, 15);
-      setMessage("Ubicación encontrada con Google Maps.");
-      return true;
-    }
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, { headers: { "Accept-Language": "es" } });
-    if (!response.ok) throw new Error();
-    const [result] = await response.json();
-    if (!result) {
-      setMessage("No encontramos esa ubicación. Intenta ser más específico.");
-      return false;
-    }
-    const latlng = { lat: Number(result.lat), lng: Number(result.lon) };
-    assignPoint(latlng, result.display_name);
-    map.setView(latlng, 15);
-    setMessage("Ubicación encontrada.");
-    return true;
-  } catch {
-    setMessage("No fue posible consultar la ubicación. Revisa tu conexión.");
-    return false;
-  }
-}
-
-document.querySelectorAll("[data-search]").forEach(button => button.addEventListener("click", () => searchPlace(button.dataset.search)));
-document.querySelectorAll("[data-map-point]").forEach(button => button.addEventListener("click", () => selectPointOnMap(button.dataset.mapPoint)));
-document.querySelectorAll("[data-current-location]").forEach(button => button.addEventListener("click", () => useCurrentLocation(button.dataset.currentLocation)));
-
-form.addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!state.start || startInput.value.trim() !== state.start.label) {
-    if (!await searchPlace("start")) return;
-  }
-  if (!state.end || endInput.value.trim() !== state.end.label) {
-    if (!await searchPlace("end")) return;
-  }
-  if (!state.start || !state.end) return setMessage("Busca o selecciona en el mapa los dos puntos.");
-  const incompleteWaypoint = state.waypoints.find(waypoint => !waypoint.point);
-  if (incompleteWaypoint) {
-    const index = state.waypoints.indexOf(incompleteWaypoint) + 1;
-    return setMessage(`Falta colocar el punto obligatorio ${index}. Escribe coordenadas, busca una dirección o usa el mapa.`);
-  }
-  calculateButton.disabled = true;
-  setMessage("Calculando la mejor ruta…");
-  try {
-    const routeStops = [state.start, ...state.waypoints.map(waypoint => waypoint.point), state.end];
-    const coords = routeStops.map(point => `${point.lng},${point.lat}`).join(";");
-    const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-    if (!response.ok) throw new Error();
-    const data = await response.json();
-    const route = data.routes?.[0];
-    if (!route) throw new Error();
-    if (state.plannedLine) map.remove(state.plannedLine);
-    const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-    state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
-    map.fit(points, 35);
-    const stopNames = ["Origen", ...state.waypoints.map((_, index) => `Punto ${index + 1}`), "Destino"];
-    const segments = (route.legs || []).map((leg, index) => ({
-      from: stopNames[index] || `Punto ${index}`,
-      to: stopNames[index + 1] || `Punto ${index + 1}`,
-      distanceMeters: leg.distance,
-      durationSeconds: leg.duration
-    }));
-    const distanceKm = route.distance / 1000;
-    const durationMin = Math.round(route.duration / 60);
-    $("#distance").textContent = `${distanceKm.toFixed(1)} km`;
-    $("#duration").textContent = durationMin >= 60 ? `${Math.floor(durationMin / 60)} h ${durationMin % 60} min` : `${durationMin} min`;
-    saveRoute({
-      id: Date.now(),
-      type: "planned",
-      start: state.start.label,
-      end: state.end.label,
-      date: dateInput.value,
-      time: timeInput.value,
-      distanceKm,
-      distanceMeters: route.distance,
-      durationMin,
-      durationMilliseconds: route.duration * 1000,
-      waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
-      segments,
-      points
-    });
-    showRouteSegments(segments);
-    setMessage(state.waypoints.length ? `Ruta calculada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.` : "Ruta calculada y guardada.");
-  } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
-  finally { calculateButton.disabled = false; }
-});
-
-function resetPlannedPoints() {
-  state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
-  state.waypoints = [];
-  state.waypointSelectionId = null;
-  state.pointSelectionType = null;
-  renderWaypointRows();
-  ["startMarker", "endMarker", "plannedLine"].forEach(key => {
-    if (state[key]) map.remove(state[key]);
-    state[key] = null;
-  });
-  state.start = null;
-  state.end = null;
-  startInput.value = "";
-  endInput.value = "";
-  $("#distance").textContent = "—";
-  $("#duration").textContent = "—";
-  hideRouteSegments();
-  setMessage("");
-}
-
-function getRoutes() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-
-function saveRoute(route) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([route, ...getRoutes()].slice(0, 20)));
-  renderHistory();
-}
-
-function vehicleMarkerOptions() {
-  return {
-    className: "vehicle-icon-shell",
-    size: 36,
-    zIndex: 1000,
-    html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=20" alt="" aria-hidden="true">
-    </div>`
-  };
-}
-
-function startRouteSimulation(id) {
-  if (state.track?.status === "recording") {
-    showMapBanner("Finaliza o pausa la captura actual antes de iniciar una simulación.", "warning");
-    return;
-  }
-
-  const route = getRoutes().find(item => item.id === id);
-  const points = window.RouteExport.routePoints(route);
-  if (!route || points.length < 2) {
-    showMapBanner("Esta ruta no contiene suficientes coordenadas para simularla. Vuelve a calcularla si fue creada en una versión anterior.", "warning", 7000);
-    return;
-  }
-
-  closeSimulation();
-  setMode(route.type === "planned" ? "plan" : "capture");
-  if (route.type === "recorded") {
-    clearCaptureLayers();
-    state.track = route;
-    renderCapturePointMarkers(markedPointsForRoute(route));
-    pauseCaptureButton.hidden = true;
-    markCapturePointButton.hidden = true;
-    finishCaptureButton.hidden = true;
-  } else {
-    resetPlannedPoints();
-  }
-
-  const latlngs = points.map(point => ({ lat: point.lat, lng: point.lng }));
-  const cumulativeDistances = [0];
-  for (let index = 1; index < latlngs.length; index += 1) {
-    cumulativeDistances.push(cumulativeDistances[index - 1] + distanceBetween(latlngs[index - 1], latlngs[index]));
-  }
-
-  const originalDurationMs = Math.max(1000, route.type === "recorded" ? getElapsedMilliseconds(route) : (route.durationMilliseconds || route.durationMin * 60000));
-  const animationDurationMs = Math.min(
-    SIMULATION_MAX_DURATION_MS,
-    Math.max(SIMULATION_MIN_DURATION_MS, originalDurationMs / SIMULATION_COMPRESSION)
-  );
-  const pendingLine = map.createPolyline(latlngs, { color: "#777777", weight: 6, opacity: 0.48, dashArray: "8 8" });
-  const completedLine = map.createPolyline([latlngs[0]], { color: "#e30613", weight: 7, opacity: 0.98 });
-  const marker = map.createHtmlMarker(latlngs[0], vehicleMarkerOptions());
-
-  state.simulation = {
-    route,
-    points,
-    latlngs,
-    cumulativeDistances,
-    geometryDistance: cumulativeDistances.at(-1),
-    originalDurationMs,
-    animationDurationMs,
-    elapsedAnimationMs: 0,
-    speed: Number($("#simulation-speed").value) || 1,
-    playing: true,
-    lastFrameTime: null,
-    lastPanTime: 0,
-    frameId: null,
-    pendingLine,
-    completedLine,
-    marker
-  };
-
-  showRouteSegments(segmentsForRoute(route));
-
-  const simulationName = route.type === "recorded" ? route.name : `${route.start} → ${route.end}`;
-  $("#simulation-title").textContent = simulationName;
+   …6427 tokens truncated… = simulationName;
   setSimulationDetailsVisible(false);
   setSimulationPanelVisible(true);
   $("#simulation-progress").value = "0";
@@ -1149,9 +724,9 @@ function showRecordedRoute(id) {
   setMode("capture");
   clearCaptureLayers();
   state.track = route;
-  state.trackLine.setPoints(route.points);
+  state.trackLine.setPoints([]);
   renderCapturePointMarkers(markedPointsForRoute(route));
-  if (state.trackLine.getPoints().length) map.fit(state.trackLine.getPoints(), 35);
+  if (route.points.length) map.fit(route.points, 35);
   $("#live-distance").textContent = formatDistance(route.distanceMeters);
   $("#live-duration").textContent = formatDuration(getElapsedMilliseconds(route));
   $("#live-points").textContent = route.points.length;
@@ -1163,6 +738,7 @@ function showRecordedRoute(id) {
   markCapturePointButton.hidden = true;
   finishCaptureButton.hidden = true;
   showRouteSegments(segmentsForRoute(route));
+  showSpeedPanelForRoute(route);
 }
 
 function showPlannedRoute(id) {
@@ -1187,19 +763,22 @@ function showPlannedRoute(id) {
   })).filter(waypoint => Number.isFinite(waypoint.point.lat) && Number.isFinite(waypoint.point.lng));
   renderWaypointRows();
   refreshWaypointMarkers();
-  state.plannedLine = map.createPolyline(points, { color: "#111111", weight: 6, opacity: 0.9 });
+  state.plannedLine = null;
   map.fit(points, 35);
   dateInput.value = route.date;
   timeInput.value = route.time;
   $("#distance").textContent = `${route.distanceKm.toFixed(1)} km`;
   $("#duration").textContent = `${route.durationMin} min`;
   showRouteSegments(segmentsForRoute(route));
+  showSpeedPanelForRoute(route);
   setMessage("Ruta planificada cargada desde el historial.");
 }
 
 function deleteRoute(id) {
   if (state.simulation?.route.id === id) closeSimulation();
   hideRouteSegments();
+  hideSpeedPanel();
+  clearSpeedGradient();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
   renderHistory();
 }
@@ -1287,6 +866,8 @@ $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
     hideRouteSegments();
+    hideSpeedPanel();
+    clearSpeedGradient();
     renderHistory();
   }
 });
@@ -1300,6 +881,10 @@ $("#route-segments-toggle").addEventListener("click", event => {
   setRouteSegmentsExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
 });
 $("#route-segments-close").addEventListener("click", hideRouteSegments);
+$("#speed-panel-toggle").addEventListener("click", event => {
+  setSpeedPanelExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
+$("#speed-panel-close").addEventListener("click", hideSpeedPanel);
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
   setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
