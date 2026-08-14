@@ -228,6 +228,18 @@ function mixHexColors(from, to, ratio) {
   return `#${start.map((value, index) => Math.round(value + (end[index] - value) * ratio).toString(16).padStart(2, "0")).join("")}`;
 }
 
+function speedColorPosition(speedKmh) {
+  const zone = speedZoneFor(speedKmh);
+  return zone === "low" ? 0 : zone === "medium" ? 0.5 : 1;
+}
+
+function speedGradientColor(position) {
+  const safePosition = Math.min(1, Math.max(0, position));
+  return safePosition <= 0.5
+    ? mixHexColors(SPEED_COLORS.low, SPEED_COLORS.medium, safePosition * 2)
+    : mixHexColors(SPEED_COLORS.medium, SPEED_COLORS.high, (safePosition - 0.5) * 2);
+}
+
 function interpolatePoint(from, to, ratio) {
   return { lat: from.lat + (to.lat - from.lat) * ratio, lng: from.lng + (to.lng - from.lng) * ratio };
 }
@@ -263,7 +275,8 @@ function renderSpeedGradient(route, profile) {
   } else {
     speeds = Array(points.length - 1).fill(profile.averageSpeedKmh);
   }
-  const colors = speeds.map(speed => SPEED_COLORS[speedZoneFor(speed)]);
+  const positions = speeds.map(speedColorPosition);
+  const colors = positions.map(speedGradientColor);
   if (colors.every(color => color === colors[0])) {
     state.speedGradientLayers.push(map.createPolyline(points, { color: colors[0], weight: 7, opacity: 0.96 }));
     return;
@@ -271,8 +284,8 @@ function renderSpeedGradient(route, profile) {
 
   const steps = Math.max(1, Math.min(6, Math.floor(SPEED_GRADIENT_MAX_LAYERS / colors.length)));
   colors.forEach((color, index) => {
-    const startColor = index ? mixHexColors(colors[index - 1], color, 0.5) : color;
-    const endColor = index < colors.length - 1 ? mixHexColors(color, colors[index + 1], 0.5) : color;
+    const startPosition = index ? (positions[index - 1] + positions[index]) / 2 : positions[index];
+    const endPosition = index < positions.length - 1 ? (positions[index] + positions[index + 1]) / 2 : positions[index];
     for (let step = 0; step < steps; step += 1) {
       const startRatio = step / steps;
       const endRatio = (step + 1) / steps;
@@ -280,7 +293,7 @@ function renderSpeedGradient(route, profile) {
         interpolatePoint(points[index], points[index + 1], startRatio),
         interpolatePoint(points[index], points[index + 1], endRatio)
       ], {
-        color: mixHexColors(startColor, endColor, (startRatio + endRatio) / 2),
+        color: speedGradientColor(startPosition + (endPosition - startPosition) * (startRatio + endRatio) / 2),
         weight: 7,
         opacity: 0.96
       }));
