@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=21">
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
   <main class="app-shell">
@@ -48,6 +48,7 @@
         <section class="live-metrics" aria-live="polite">
           <div><span>Distancia</span><strong id="live-distance">0 m</strong></div>
           <div><span>Tiempo</span><strong id="live-duration">00:00</strong></div>
+          <div><span>Velocidad</span><strong id="live-speed">0.0 km/h</strong></div>
           <div><span>Precisión</span><strong id="live-accuracy">—</strong></div>
           <div><span>Puntos GPS</span><strong id="live-points">0</strong></div>
           <div><span>Puntos marcados</span><strong id="live-marked-points">0</strong></div>
@@ -139,7 +140,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=21" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=22" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -245,8 +246,9 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=21"></script>
-  <script src="route-export.js?v=21"></script>
-  <script src="app.js?v=21"></script>
+  <script src="map-engine.js?v=22"></script>
+  <script src="route-export.js?v=22"></script>
+  <script src="gps-speed.js?v=22"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>

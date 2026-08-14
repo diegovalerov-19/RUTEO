@@ -24,6 +24,8 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Durante una grabación se pueden marcar puntos numerados con la ubicación GPS actual; se conservan en el mapa, el historial y las exportaciones CSV/KML.
 - Al finalizar, abrir o simular una ruta, el trazado muestra un degradado progresivo de velocidad: rojo para 0–15 km/h, amarillo para 15–35 km/h y verde para más de 35 km/h.
 - El cuadro desplegable **Velocidades**, ubicado debajo de **Tramos**, muestra la velocidad promedio total, el tiempo acumulado en cada rango y la leyenda de colores; inicia minimizado y puede cerrarse.
+- La captura detecta pérdidas temporales de GPS, mantiene la velocidad promedio previa sin inventar coordenadas, reinicia la media al marcar una parada y suaviza las lecturas cuando regresa la señal.
+- La velocidad actual se muestra durante la grabación y las lecturas atípicas se filtran antes de almacenarlas para evitar picos irreales.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
