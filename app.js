@@ -1183,8 +1183,8 @@ function renderImportedGeoJSON(geojson) {
       state.importedLayers.push(map.createPolyline(line.map(([lng, lat]) => ({ lat, lng })), {
         color: "#e30613",
         weight: 5,
-        opacity: 0.88,
-        dashArray: "7 5"
+        opacity: 0.9,
+        dashArray: feature.properties?.role === "route" ? undefined : "7 5"
       }));
     });
   });
@@ -1211,10 +1211,13 @@ function acceptImportedGeoJSON(geojson, report) {
   renderImportReport(report);
   renderImportedGeoJSON(geojson);
   applyImportedRouteButton.disabled = !(geojson.features || []).length;
+  const traceSummary = report.tracePoints
+    ? ` Trazado: 1 línea con ${report.tracePoints} coordenadas; puntos marcados: ${report.markedPoints || 0}.`
+    : "";
   setImportStatus(
-    report.failed
+    (report.failed
       ? `Carga finalizada con ${report.processed} registros correctos y ${report.failed} omitidos.`
-      : `Carga finalizada: ${report.processed} registros correctos.`,
+      : `Carga finalizada: ${report.processed} registros correctos.`) + traceSummary,
     report.processed ? "success" : "error"
   );
 }
@@ -1240,6 +1243,7 @@ function showColumnMapping(table) {
   fillColumnSelect($("#import-longitude-column"), table.headers, suggested.longitude);
   fillColumnSelect($("#import-label-column"), table.headers, suggested.label, true);
   fillColumnSelect($("#import-order-column"), table.headers, suggested.order, true);
+  fillColumnSelect($("#import-record-type-column"), table.headers, suggested.recordType, true);
   routeImportMapping.hidden = false;
   routeImportReport.hidden = true;
   setImportStatus(`Se encontraron ${table.rows.length} filas. Confirma qué columnas contienen las coordenadas.`);
@@ -1277,7 +1281,8 @@ async function processImportedColumns() {
     latitude: $("#import-latitude-column").value,
     longitude: $("#import-longitude-column").value,
     label: $("#import-label-column").value,
-    order: $("#import-order-column").value
+    order: $("#import-order-column").value,
+    recordType: $("#import-record-type-column").value
   };
   setImportStatus("Validando y reproyectando las filas…");
   try {
@@ -1297,7 +1302,6 @@ function applyImportedRoute() {
   try {
     const importedPlan = window.RouteImport.routingStops(importedGeoJSON, { maxStops: 10 });
     resetPlannedPoints();
-    clearImportedLayers();
     const stops = importedPlan.stops;
     setPoint("start", stops[0], stops[0].label);
     setPoint("end", stops.at(-1), stops.at(-1).label);
@@ -1346,7 +1350,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=25" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=26" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1859,3 +1863,4 @@ initApp().catch(error => {
     banner.hidden = false;
   }
 });
+
