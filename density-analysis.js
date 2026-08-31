@@ -1,8 +1,8 @@
 (function exposeDensityAnalysis(global) {
   "use strict";
 
-  const DEFAULT_RADIUS_METERS = 1000;
-  const DEFAULT_CELL_SIZE_METERS = 500;
+  const DEFAULT_RADIUS_METERS = 5;
+  const DEFAULT_CELL_SIZE_METERS = 2.5;
   const EARTH_METERS_PER_DEGREE = 111320;
 
   function validStop(value, index) {
@@ -57,8 +57,8 @@
   function analyze(inputStops, options = {}) {
     const stops = (inputStops || []).map(validStop).filter(Boolean);
     if (!stops.length) throw new Error("Agrega al menos un punto obligatorio válido para analizar la densidad.");
-    const radiusMeters = Math.max(100, Number(options.radiusMeters) || DEFAULT_RADIUS_METERS);
-    const cellSizeMeters = Math.max(100, Math.min(radiusMeters, Number(options.cellSizeMeters) || DEFAULT_CELL_SIZE_METERS));
+    const radiusMeters = Math.max(1, Number(options.radiusMeters) || DEFAULT_RADIUS_METERS);
+    const cellSizeMeters = Math.max(1, Math.min(radiusMeters, Number(options.cellSizeMeters) || DEFAULT_CELL_SIZE_METERS));
     const referenceLat = stops.reduce((sum, stop) => sum + stop.lat, 0) / stops.length;
     const referenceLng = stops.reduce((sum, stop) => sum + stop.lng, 0) / stops.length;
     const longitudeScale = EARTH_METERS_PER_DEGREE * Math.max(0.05, Math.cos(referenceLat * Math.PI / 180));
@@ -134,6 +134,7 @@
           puntos_influencia: cell.pointsInInfluence,
           frecuencia_acumulada: Number(cell.accumulatedFrequency.toFixed(2)),
           estancia_total_min: Number(cell.accumulatedDwell.toFixed(2)),
+          radio_cobertura_m: radiusMeters,
           radio_cobertura_km: radiusMeters / 1000,
           tamano_celda_m: cellSizeMeters
         }
@@ -142,6 +143,7 @@
     const summary = {
       total_puntos_analizados: stops.length,
       zonas_alta_densidad: highDensityZones(cells),
+      radio_cobertura_m: radiusMeters,
       radio_cobertura_km: radiusMeters / 1000,
       celdas_alta_densidad: cells.filter(cell => cell.level === "Alta").length,
       celdas_media_densidad: cells.filter(cell => cell.level === "Media").length,
@@ -153,8 +155,8 @@
       seccion_interfaz_usuario: {
         ubicacion_ui: "panel_cargue_ruta",
         componentes: [
-          { tipo: "mapa_raster_preview", titulo: "Capa Ráster de Densidad (Radio 1km)" },
-          { tipo: "boton_descarga", label: "Descargar Capa Ráster (.geojson)", nombre_archivo: "capa_raster_densidad_1km.geojson", formato: "application/json" }
+          { tipo: "mapa_raster_preview", titulo: "Capa Ráster de Densidad (Radio 5 m)" },
+          { tipo: "boton_descarga", label: "Descargar Capa Ráster (.geojson)", nombre_archivo: "capa_raster_densidad_5m.geojson", formato: "application/json" }
         ]
       }
     };
@@ -163,7 +165,7 @@
   function downloadableGeoJSON(result) {
     return {
       type: "FeatureCollection",
-      name: "capa_raster_densidad_1km",
+      name: "capa_raster_densidad_5m",
       features: result?.capa_raster?.features || [],
       properties: { resumen_analisis: result?.resumen_analisis || {} }
     };
