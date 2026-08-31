@@ -51,7 +51,9 @@ const state = {
   routeSegments: [],
   speedProfile: null,
   speedGradientLayers: [],
-  importedLayers: []
+  importedLayers: [],
+  densityLayers: [],
+  densityResult: null
 };
 
 const $ = selector => document.querySelector(selector);
@@ -859,6 +861,10 @@ function renderWaypointRows() {
       <button type="button" data-map-waypoint="${waypoint.id}" aria-label="Colocar punto obligatorio ${index + 1} en el mapa">◎</button>
       <button class="remove-waypoint" type="button" data-remove-waypoint="${waypoint.id}" aria-label="Eliminar punto obligatorio ${index + 1}">×</button>
     </div>
+    <div class="waypoint-analysis-row">
+      <label>Frecuencia de parada<input data-waypoint-frequency="${waypoint.id}" type="number" min="1" step="1" value="${Math.max(1, Number(waypoint.frequency) || 1)}"></label>
+      <label>Estancia (minutos)<input data-waypoint-dwell="${waypoint.id}" type="number" min="0" step="1" value="${Math.max(0, Number(waypoint.dwellMinutes) || 0)}"></label>
+    </div>
   </div>`).join("");
 
   document.querySelectorAll("[data-waypoint-input]").forEach(input => input.addEventListener("input", event => {
@@ -868,6 +874,16 @@ function renderWaypointRows() {
   document.querySelectorAll("[data-search-waypoint]").forEach(button => button.addEventListener("click", () => searchPlace("waypoint", button.dataset.searchWaypoint)));
   document.querySelectorAll("[data-map-waypoint]").forEach(button => button.addEventListener("click", () => selectWaypointOnMap(button.dataset.mapWaypoint)));
   document.querySelectorAll("[data-remove-waypoint]").forEach(button => button.addEventListener("click", () => removeWaypoint(button.dataset.removeWaypoint)));
+  document.querySelectorAll("[data-waypoint-frequency]").forEach(input => input.addEventListener("input", event => {
+    const waypoint = getWaypoint(event.currentTarget.dataset.waypointFrequency);
+    if (waypoint) waypoint.frequency = Math.max(1, Number(event.currentTarget.value) || 1);
+    clearDensityAnalysis();
+  }));
+  document.querySelectorAll("[data-waypoint-dwell]").forEach(input => input.addEventListener("input", event => {
+    const waypoint = getWaypoint(event.currentTarget.dataset.waypointDwell);
+    if (waypoint) waypoint.dwellMinutes = Math.max(0, Number(event.currentTarget.value) || 0);
+    clearDensityAnalysis();
+  }));
 }
 
 function selectWaypointOnMap(id) {
@@ -920,7 +936,8 @@ function useCurrentLocation(type) {
 
 function addWaypoint(point = null, label = "", selectOnMap = true) {
   if (state.waypoints.length >= 8) return setMessage("Puedes agregar hasta 8 puntos obligatorios por ruta.");
-  const waypoint = { id: String(++waypointSequence), point, label, marker: null };
+  clearDensityAnalysis();
+  const waypoint = { id: String(++waypointSequence), point, label, frequency: 1, dwellMinutes: 0, marker: null };
   state.waypoints.push(waypoint);
   renderWaypointRows();
   refreshWaypointMarkers();
@@ -932,6 +949,7 @@ function removeWaypoint(id) {
   const waypoint = getWaypoint(id);
   if (!waypoint) return;
   if (waypoint.marker) map.remove(waypoint.marker);
+  clearDensityAnalysis();
   state.waypoints = state.waypoints.filter(item => item.id !== waypoint.id);
   if (state.waypointSelectionId === waypoint.id) state.waypointSelectionId = null;
   renderWaypointRows();
@@ -944,6 +962,7 @@ function setWaypoint(id, latlng, label) {
   if (!waypoint) return;
   waypoint.point = { lat: Number(latlng.lat), lng: Number(latlng.lng) };
   waypoint.label = label;
+  clearDensityAnalysis();
   renderWaypointRows();
   refreshWaypointMarkers();
 }
@@ -1099,7 +1118,7 @@ form.addEventListener("submit", async event => {
       distanceMeters: route.distanceMeters,
       durationMin,
       durationMilliseconds: route.durationSeconds * 1000,
-      waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
+      waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label, frequency: waypoint.frequency || 1, dwellMinutes: waypoint.dwellMinutes || 0 })),
       segments,
       optimization: route.optimization,
       points
@@ -1113,6 +1132,7 @@ form.addEventListener("submit", async event => {
     setMessage(state.waypoints.length
       ? `Ruta optimizada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.${repetitionMessage}`
       : `Ruta optimizada y guardada.${repetitionMessage}`);
+    if (state.waypoints.length) runDensityAnalysis();
   } catch (error) {
     setMessage(error?.code === "NoRoute"
       ? "No existe una conexión vial entre dos de los puntos seleccionados. Revisa su ubicación."
@@ -1126,6 +1146,7 @@ function resetPlannedPoints() {
   hideSpeedPanel();
   state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
   state.waypoints = [];
+  clearDensityAnalysis();
   state.waypointSelectionId = null;
   state.pointSelectionType = null;
   renderWaypointRows();
@@ -1316,6 +1337,8 @@ function applyImportedRoute() {
       id: String(++waypointSequence),
       point: { lat: stop.lat, lng: stop.lng },
       label: stop.label,
+      frequency: 1,
+      dwellMinutes: 0,
       marker: null
     }));
     renderWaypointRows();
@@ -1343,6 +1366,77 @@ function clearRouteImport() {
   setImportStatus("Selecciona un archivo para comenzar.");
 }
 
+function clearDensityLayers() {
+  state.densityLayers.forEach(layer => map.remove(layer));
+  state.densityLayers = [];
+}
+
+function clearDensityAnalysis() {
+  clearDensityLayers();
+  state.densityResult = null;
+  const summary = $("#density-analysis-summary");
+  if (summary) summary.hidden = true;
+  const downloadButton = $("#download-density-geojson");
+  if (downloadButton) downloadButton.disabled = true;
+  const status = $("#density-analysis-status");
+  if (status) status.textContent = state.waypoints.some(waypoint => waypoint.point)
+    ? "Los puntos cambiaron. Pulsa Analizar densidad para actualizar la capa."
+    : "Agrega puntos obligatorios para generar la capa.";
+}
+
+function runDensityAnalysis() {
+  const stops = state.waypoints.filter(waypoint => waypoint.point).map((waypoint, index) => ({
+    lat: waypoint.point.lat,
+    lng: waypoint.point.lng,
+    label: waypoint.label || `Punto obligatorio ${index + 1}`,
+    frequency: waypoint.frequency || 1,
+    dwellMinutes: waypoint.dwellMinutes || 0
+  }));
+  try {
+    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 1000, cellSizeMeters: 500 });
+    clearDensityLayers();
+    const colors = { Alta: "#E62020", Media: "#FFD700", Baja: "#00A651" };
+    result.capa_raster.features.forEach(feature => {
+      const properties = feature.properties;
+      const points = feature.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+      state.densityLayers.push(map.createPolygon(points, {
+        strokeColor: colors[properties.densidad_nivel],
+        strokeWeight: 1,
+        strokeOpacity: 0.72,
+        fillColor: colors[properties.densidad_nivel],
+        fillOpacity: 0.34 + properties.valor_intensidad * 0.26,
+        title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
+      }));
+    });
+    state.densityResult = result;
+    $("#density-total-points").textContent = String(result.resumen_analisis.total_puntos_analizados);
+    $("#density-high-zones").textContent = String(result.resumen_analisis.zonas_alta_densidad);
+    $("#density-total-cells").textContent = String(result.capa_raster.features.length);
+    $("#density-analysis-summary").hidden = false;
+    $("#download-density-geojson").disabled = false;
+    $("#density-analysis-status").textContent = `Capa lista: ${result.capa_raster.features.length} celdas clasificadas con influencia de 1 km.`;
+    map.fit(stops, 45);
+  } catch (error) {
+    clearDensityAnalysis();
+    $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
+  }
+}
+
+function downloadDensityGeoJSON() {
+  if (!state.densityResult) return;
+  const geojson = window.DensityAnalysis.downloadableGeoJSON(state.densityResult);
+  const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/geo+json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "capa_raster_densidad_1km.geojson";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  $("#density-analysis-status").textContent = "Descarga GeoJSON preparada correctamente.";
+}
+
 function getRoutes() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
 }
@@ -1358,7 +1452,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=27" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=28" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1757,6 +1851,8 @@ function showPlannedRoute(id) {
     id: String(++waypointSequence),
     point: { lat: Number(waypoint.lat), lng: Number(waypoint.lng) },
     label: waypoint.label || `${Number(waypoint.lat).toFixed(6)}, ${Number(waypoint.lng).toFixed(6)}`,
+    frequency: Math.max(1, Number(waypoint.frequency) || 1),
+    dwellMinutes: Math.max(0, Number(waypoint.dwellMinutes) || 0),
     marker: null
   })).filter(waypoint => Number.isFinite(waypoint.point.lat) && Number.isFinite(waypoint.point.lng));
   renderWaypointRows();
@@ -1875,6 +1971,8 @@ $("#process-import-columns").addEventListener("click", processImportedColumns);
 applyImportedRouteButton.addEventListener("click", applyImportedRoute);
 simulateImportedRouteButton.addEventListener("click", startImportedRouteSimulation);
 $("#clear-route-import").addEventListener("click", clearRouteImport);
+$("#run-density-analysis").addEventListener("click", runDensityAnalysis);
+$("#download-density-geojson").addEventListener("click", downloadDensityGeoJSON);
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
