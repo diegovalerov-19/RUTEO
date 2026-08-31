@@ -24,6 +24,18 @@
     return "Baja";
   }
 
+  function stopsFromGeoJSON(geojson) {
+    const pointFeatures = (geojson?.features || []).filter(feature => feature?.geometry?.type === "Point");
+    const markedFeatures = pointFeatures.filter(feature => feature?.properties?.role === "marked-point");
+    return (markedFeatures.length ? markedFeatures : pointFeatures).map((feature, index) => ({
+      lat: Number(feature.geometry.coordinates[1]),
+      lng: Number(feature.geometry.coordinates[0]),
+      label: String(feature.properties?.label || feature.properties?.name || `Punto fijo ${index + 1}`),
+      frequency: Math.max(1, Number(feature.properties?.frequency ?? feature.properties?.frecuencia) || 1),
+      dwellMinutes: Math.max(0, Number(feature.properties?.dwellMinutes ?? feature.properties?.estancia_min ?? feature.properties?.estanciaMinutos) || 0)
+    })).filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+  }
+
   function highDensityZones(cells) {
     const high = new Set(cells.filter(cell => cell.level === "Alta").map(cell => `${cell.column}:${cell.row}`));
     let zones = 0;
@@ -139,7 +151,7 @@
       resumen_analisis: summary,
       capa_raster: { tipo: "FeatureCollection", type: "FeatureCollection", features },
       seccion_interfaz_usuario: {
-        ubicacion_ui: "final_panel_planificar_ruta",
+        ubicacion_ui: "panel_cargue_ruta",
         componentes: [
           { tipo: "mapa_raster_preview", titulo: "Capa Ráster de Densidad (Radio 1km)" },
           { tipo: "boton_descarga", label: "Descargar Capa Ráster (.geojson)", nombre_archivo: "capa_raster_densidad_1km.geojson", formato: "application/json" }
@@ -157,7 +169,7 @@
     };
   }
 
-  const api = { DEFAULT_RADIUS_METERS, DEFAULT_CELL_SIZE_METERS, analyze, downloadableGeoJSON, levelFor };
+  const api = { DEFAULT_RADIUS_METERS, DEFAULT_CELL_SIZE_METERS, analyze, downloadableGeoJSON, levelFor, stopsFromGeoJSON };
   global.DensityAnalysis = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window === "undefined" ? globalThis : window);
