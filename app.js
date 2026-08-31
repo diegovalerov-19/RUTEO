@@ -3,9 +3,6 @@ const STORAGE_KEY = "ruteo-routes-v2";
 const ACTIVE_TRACK_KEY = "ruteo-active-track-v2";
 const MIN_POINT_DISTANCE_METERS = 5;
 const MAX_ACCEPTED_ACCURACY_METERS = 60;
-const SIMULATION_MIN_DURATION_MS = 12000;
-const SIMULATION_MAX_DURATION_MS = 90000;
-const SIMULATION_COMPRESSION = 20;
 const GOOGLE_MAPS_KEY = "ruteo-google-maps-key-v1";
 const SPEED_COLORS = { low: "#E62020", medium: "#FFD700", high: "#00FF00" };
 const SPEED_GRADIENT_MAX_LAYERS = 1200;
@@ -1142,7 +1139,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=22" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=23" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1180,10 +1177,9 @@ function startRouteSimulation(id) {
   }
 
   const originalDurationMs = Math.max(1000, route.type === "recorded" ? getElapsedMilliseconds(route) : (route.durationMilliseconds || route.durationMin * 60000));
-  const animationDurationMs = Math.min(
-    SIMULATION_MAX_DURATION_MS,
-    Math.max(SIMULATION_MIN_DURATION_MS, originalDurationMs / SIMULATION_COMPRESSION)
-  );
+  // En 1×, cada segundo de la grabación equivale a un segundo de reproducción.
+  // Las opciones 2×, 4× y 10× aceleran esta misma línea de tiempo real.
+  const animationDurationMs = originalDurationMs;
   showSpeedPanelForRoute(route);
   const pendingLine = map.createPolyline(latlngs, { color: "#777777", weight: 8, opacity: 0.16, dashArray: "8 8" });
   const completedLine = map.createPolyline([latlngs[0]], { color: "#ffffff", weight: 3, opacity: 0.22 });
