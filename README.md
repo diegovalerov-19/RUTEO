@@ -37,6 +37,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Los recorridos CSV con `fecha_hora` y `velocidad_m_s` se pueden simular directamente desde el cargador; el camión avanza con la cronología y las velocidades originales de cada tramo.
 - Dentro de **Cargue aquí su ruta**, el análisis GIS genera una capa de densidad de paradas con un radio preciso de 5 m: detecta automáticamente los puntos fijos o marcados de un archivo ya cargado, también permite usar los puntos obligatorios del planificador, crea una rejilla vectorizada, clasifica concentraciones Alta/Media/Baja y permite descargar `capa_raster_densidad_5m.geojson`.
 - El panel compacto **Capas**, ubicado debajo de los controles del camión, permite minimizar y ocultar o mostrar independientemente el recorrido importado y el ráster sin borrar sus datos.
+- Al calcular una ruta, la aplicación conserva activa la pestaña **Planificar ruta**. Al cargar puntos fijos, el ráster de 5 m enfoca automáticamente el hotspot principal con contraste reforzado para que sus celdas sean visibles.
 - Registro de la fecha y hora del recorrido.
 - Historial local de las últimas 20 rutas.
 - Diseño adaptable para computador y teléfono.
