@@ -35,8 +35,8 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Descarga de coordenadas en CSV, KML y Shapefile (ZIP con SHP, SHX, DBF, PRJ y CPG).
 - Importación desde el planificador de CSV, Excel, Shapefile ZIP, GeoJSON, GPX, KML y KMZ, con vista previa, mapeo de columnas y reporte de registros válidos u omitidos. Los CSV exportados por RUTEO reconstruyen las filas `TRAZA` como una línea continua y conservan únicamente las filas `MARCADO` como puntos visibles.
 - Los recorridos CSV con `fecha_hora` y `velocidad_m_s` se pueden simular directamente desde el cargador; el camión avanza con la cronología y las velocidades originales de cada tramo.
-- Dentro de **Cargue aquí su ruta**, el análisis GIS genera una capa de densidad de paradas con influencia de 1 km: detecta automáticamente los puntos fijos o marcados de un archivo ya cargado, también permite usar los puntos obligatorios del planificador, crea una rejilla vectorizada, clasifica concentraciones Alta/Media/Baja y permite descargar `capa_raster_densidad_1km.geojson`.
-- La capa del recorrido importado y la capa ráster pueden ocultarse o mostrarse de forma independiente sin borrar sus datos.
+- Dentro de **Cargue aquí su ruta**, el análisis GIS genera una capa de densidad de paradas con un radio preciso de 5 m: detecta automáticamente los puntos fijos o marcados de un archivo ya cargado, también permite usar los puntos obligatorios del planificador, crea una rejilla vectorizada, clasifica concentraciones Alta/Media/Baja y permite descargar `capa_raster_densidad_5m.geojson`.
+- El panel compacto **Capas**, ubicado debajo de los controles del camión, permite minimizar y ocultar o mostrar independientemente el recorrido importado y el ráster sin borrar sus datos.
 - Registro de la fecha y hora del recorrido.
 - Historial local de las últimas 20 rutas.
 - Diseño adaptable para computador y teléfono.
