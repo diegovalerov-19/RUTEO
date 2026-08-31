@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=24">
+  <link rel="stylesheet" href="styles.css?v=25">
 </head>
 <body>
   <main class="app-shell">
@@ -120,6 +120,47 @@
           <div><span>Distancia</span><strong id="distance">—</strong></div>
           <div><span>Duración estimada</span><strong id="duration">—</strong></div>
         </section>
+
+        <section class="route-import" aria-labelledby="route-import-title">
+          <button id="route-import-toggle" class="route-import-trigger" type="button" aria-controls="route-import-panel" aria-expanded="false">
+            <span aria-hidden="true">⇧</span>
+            <span><strong id="route-import-title">Cargue aquí su ruta</strong><small>CSV, Excel, Shapefile, GeoJSON, GPX, KML o KMZ</small></span>
+            <span class="route-import-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div id="route-import-panel" class="route-import-panel" hidden>
+            <p>Los archivos se procesan en este dispositivo y se convierten a GeoJSON WGS84 antes de mostrarse en el mapa.</p>
+            <label for="route-import-file">Archivo de ruta</label>
+            <input id="route-import-file" type="file" accept=".csv,.xlsx,.zip,.geojson,.json,.gpx,.kml,.kmz">
+            <small class="import-help">El ZIP de Shapefile debe incluir .shp, .dbf, .shx y .prj. Tamaño máximo: 50 MB.</small>
+
+            <label for="route-import-crs">Sistema de coordenadas de origen</label>
+            <input id="route-import-crs" placeholder="Automático o EPSG:3116">
+            <small class="import-help">Déjalo vacío para detectar .prj/GeoJSON o asumir WGS84 en tablas. Para coordenadas proyectadas de CSV/Excel escribe su EPSG.</small>
+
+            <section id="route-import-mapping" class="route-import-mapping" hidden aria-label="Mapeo de columnas">
+              <h4>Asociar columnas</h4>
+              <div class="import-mapping-grid">
+                <label>Latitud / Y<select id="import-latitude-column"></select></label>
+                <label>Longitud / X<select id="import-longitude-column"></select></label>
+                <label>Etiqueta<select id="import-label-column"></select></label>
+                <label>Orden<select id="import-order-column"></select></label>
+              </div>
+              <button id="process-import-columns" class="primary-button" type="button">Procesar columnas</button>
+            </section>
+
+            <p id="route-import-status" class="import-status" role="status" aria-live="polite">Selecciona un archivo para comenzar.</p>
+            <section id="route-import-report" class="import-report" hidden aria-label="Reporte de importación">
+              <div><span>Correctos</span><strong id="import-success-count">0</strong></div>
+              <div><span>Omitidos</span><strong id="import-failure-count">0</strong></div>
+              <div><span>Proyección</span><strong id="import-crs-result">EPSG:4326</strong></div>
+              <ul id="import-error-list"></ul>
+            </section>
+            <div class="import-actions">
+              <button id="apply-imported-route" class="primary-button" type="button" disabled>Usar en el planificador</button>
+              <button id="clear-route-import" class="secondary-button" type="button">Limpiar archivo</button>
+            </div>
+          </div>
+        </section>
       </section>
 
       <section class="history-section">
@@ -140,7 +181,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=24" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=25" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -247,10 +288,11 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=24"></script>
-  <script src="route-export.js?v=24"></script>
-  <script src="gps-speed.js?v=24"></script>
-  <script src="route-optimizer.js?v=24"></script>
-  <script src="app.js?v=24"></script>
+  <script src="map-engine.js?v=25"></script>
+  <script src="route-export.js?v=25"></script>
+  <script src="gps-speed.js?v=25"></script>
+  <script src="route-import.js?v=25"></script>
+  <script src="route-optimizer.js?v=25"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>

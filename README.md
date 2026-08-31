@@ -33,6 +33,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Cálculo de distancia, duración y trazado de la ruta.
 - Mapa oficial de Google Maps mediante una API key configurada en el dispositivo, con OpenStreetMap como respaldo.
 - Descarga de coordenadas en CSV, KML y Shapefile (ZIP con SHP, SHX, DBF, PRJ y CPG).
+- Importación desde el planificador de CSV, Excel, Shapefile ZIP, GeoJSON, GPX, KML y KMZ, con vista previa, mapeo de columnas y reporte de registros válidos u omitidos.
 - Registro de la fecha y hora del recorrido.
 - Historial local de las últimas 20 rutas.
 - Diseño adaptable para computador y teléfono.
@@ -67,3 +68,16 @@ Cada recorrido con al menos dos coordenadas ofrece tres descargas:
 - **SHP:** archivo ZIP con el conjunto Shapefile completo en WGS 84 (EPSG:4326).
 
 Las rutas planificadas creadas antes de esta actualización no contienen su geometría completa. Deben calcularse nuevamente para poder simularlas o descargarlas.
+
+## Importación de rutas
+
+El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa los archivos en el navegador y produce una colección GeoJSON en WGS 84. Los puntos importados se aplican como origen, paradas obligatorias ordenadas y destino. Las líneas con muchos vértices se resumen en hasta diez controles distribuidos sobre el trazado antes de calcular la ruta vial.
+
+- CSV se analiza sin dependencias externas y Excel utiliza SheetJS 0.20.3.
+- Los Shapefile ZIP se leen con shpjs 6.2.0, incluyendo la reproyección declarada en el archivo PRJ.
+- GeoJSON usa su miembro `crs` cuando existe; CSV y Excel permiten escribir el EPSG de origen.
+- GPX y KML se procesan con el analizador XML del módulo; KMZ se descomprime con fflate 0.8.2.
+- Las reproyecciones adicionales usan Proj4js 2.21.0 y definiciones EPSG cuando sean necesarias.
+- Cada importación valida longitud entre −180 y 180, latitud entre −90 y 90, omite registros corruptos y presenta un reporte sin interrumpir los demás registros.
+
+Las librerías de Excel, Shapefile, KMZ y reproyección se cargan bajo demanda para no aumentar el peso inicial de la PWA.
