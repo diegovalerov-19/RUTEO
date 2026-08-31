@@ -33,7 +33,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Cálculo de distancia, duración y trazado de la ruta.
 - Mapa oficial de Google Maps mediante una API key configurada en el dispositivo, con OpenStreetMap como respaldo.
 - Descarga de coordenadas en CSV, KML y Shapefile (ZIP con SHP, SHX, DBF, PRJ y CPG).
-- Importación desde el planificador de CSV, Excel, Shapefile ZIP, GeoJSON, GPX, KML y KMZ, con vista previa, mapeo de columnas y reporte de registros válidos u omitidos.
+- Importación desde el planificador de CSV, Excel, Shapefile ZIP, GeoJSON, GPX, KML y KMZ, con vista previa, mapeo de columnas y reporte de registros válidos u omitidos. Los CSV exportados por RUTEO reconstruyen las filas `TRAZA` como una línea continua y conservan únicamente las filas `MARCADO` como puntos visibles.
 - Registro de la fecha y hora del recorrido.
 - Historial local de las últimas 20 rutas.
 - Diseño adaptable para computador y teléfono.
@@ -81,3 +81,4 @@ El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa l
 - Cada importación valida longitud entre −180 y 180, latitud entre −90 y 90, omite registros corruptos y presenta un reporte sin interrumpir los demás registros.
 
 Las librerías de Excel, Shapefile, KMZ y reproyección se cargan bajo demanda para no aumentar el peso inicial de la PWA.
+
