@@ -50,7 +50,8 @@ const state = {
   simulation: null,
   routeSegments: [],
   speedProfile: null,
-  speedGradientLayers: []
+  speedGradientLayers: [],
+  importedLayers: []
 };
 
 const $ = selector => document.querySelector(selector);
@@ -66,7 +67,16 @@ const startCaptureButton = $("#start-capture");
 const pauseCaptureButton = $("#pause-capture");
 const markCapturePointButton = $("#mark-capture-point");
 const finishCaptureButton = $("#finish-capture");
+const routeImportFile = $("#route-import-file");
+const routeImportCrs = $("#route-import-crs");
+const routeImportStatus = $("#route-import-status");
+const routeImportMapping = $("#route-import-mapping");
+const routeImportReport = $("#route-import-report");
+const applyImportedRouteButton = $("#apply-imported-route");
 let waypointSequence = 0;
+let importedTable = null;
+let importedTableFormat = "";
+let importedGeoJSON = null;
 
 const now = new Date();
 dateInput.value = now.toISOString().slice(0, 10);
@@ -1132,6 +1142,195 @@ function resetPlannedPoints() {
   setMessage("");
 }
 
+function setImportStatus(text, type = "") {
+  routeImportStatus.textContent = text;
+  routeImportStatus.className = `import-status${type ? ` ${type}` : ""}`;
+}
+
+function clearImportedLayers() {
+  state.importedLayers.forEach(layer => map.remove(layer));
+  state.importedLayers = [];
+}
+
+function renderImportedGeoJSON(geojson) {
+  clearImportedLayers();
+  const fitPoints = [];
+  const maxPreviewLayers = 500;
+  const addFitPoint = coordinate => {
+    if (fitPoints.length < 5000) fitPoints.push({ lat: Number(coordinate[1]), lng: Number(coordinate[0]) });
+  };
+
+  (geojson?.features || []).forEach(feature => {
+    const geometry = feature?.geometry;
+    if (!geometry) return;
+    if (geometry.type === "Point") {
+      addFitPoint(geometry.coordinates);
+      if (state.importedLayers.length >= maxPreviewLayers) return;
+      state.importedLayers.push(map.createCircleMarker({ lat: geometry.coordinates[1], lng: geometry.coordinates[0] }, {
+        radius: 5,
+        strokeColor: "#111111",
+        strokeWeight: 2,
+        fillColor: "#FFD700",
+        fillOpacity: 1,
+        title: String(feature.properties?.label || feature.properties?.name || "Punto importado")
+      }));
+      return;
+    }
+    const lines = geometry.type === "LineString" ? [geometry.coordinates] : geometry.type === "MultiLineString" ? geometry.coordinates : [];
+    lines.forEach(line => {
+      line.forEach(addFitPoint);
+      if (state.importedLayers.length >= maxPreviewLayers) return;
+      state.importedLayers.push(map.createPolyline(line.map(([lng, lat]) => ({ lat, lng })), {
+        color: "#e30613",
+        weight: 5,
+        opacity: 0.88,
+        dashArray: "7 5"
+      }));
+    });
+  });
+  if (fitPoints.length) map.fit(fitPoints, 35);
+}
+
+function renderImportReport(report) {
+  $("#import-success-count").textContent = String(report.processed);
+  $("#import-failure-count").textContent = String(report.failed);
+  $("#import-crs-result").textContent = report.sourceCrs === report.targetCrs ? report.targetCrs : `${report.sourceCrs} → ${report.targetCrs}`;
+  $("#import-crs-result").title = $("#import-crs-result").textContent;
+  const errorList = $("#import-error-list");
+  errorList.replaceChildren();
+  report.errors.forEach(error => {
+    const item = document.createElement("li");
+    item.textContent = `${error.record}: ${error.message}`;
+    errorList.appendChild(item);
+  });
+  routeImportReport.hidden = false;
+}
+
+function acceptImportedGeoJSON(geojson, report) {
+  importedGeoJSON = geojson;
+  renderImportReport(report);
+  renderImportedGeoJSON(geojson);
+  applyImportedRouteButton.disabled = !(geojson.features || []).length;
+  setImportStatus(
+    report.failed
+      ? `Carga finalizada con ${report.processed} registros correctos y ${report.failed} omitidos.`
+      : `Carga finalizada: ${report.processed} registros correctos.`,
+    report.processed ? "success" : "error"
+  );
+}
+
+function fillColumnSelect(select, headers, selected, optional = false) {
+  select.replaceChildren();
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = optional ? "No usar" : "Seleccionar…";
+  select.appendChild(empty);
+  headers.forEach(header => {
+    const option = document.createElement("option");
+    option.value = header;
+    option.textContent = header;
+    option.selected = header === selected;
+    select.appendChild(option);
+  });
+}
+
+function showColumnMapping(table) {
+  const suggested = window.RouteImport.suggestedMapping(table.headers);
+  fillColumnSelect($("#import-latitude-column"), table.headers, suggested.latitude);
+  fillColumnSelect($("#import-longitude-column"), table.headers, suggested.longitude);
+  fillColumnSelect($("#import-label-column"), table.headers, suggested.label, true);
+  fillColumnSelect($("#import-order-column"), table.headers, suggested.order, true);
+  routeImportMapping.hidden = false;
+  routeImportReport.hidden = true;
+  setImportStatus(`Se encontraron ${table.rows.length} filas. Confirma qué columnas contienen las coordenadas.`);
+}
+
+async function processSelectedRouteFile() {
+  const file = routeImportFile.files?.[0];
+  importedTable = null;
+  importedTableFormat = "";
+  importedGeoJSON = null;
+  applyImportedRouteButton.disabled = true;
+  routeImportMapping.hidden = true;
+  routeImportReport.hidden = true;
+  clearImportedLayers();
+  if (!file) return setImportStatus("Selecciona un archivo para comenzar.");
+  setImportStatus(`Procesando ${file.name}…`);
+  routeImportFile.disabled = true;
+  try {
+    const result = await window.RouteImport.readFile(file, { sourceCrs: routeImportCrs.value.trim() || "auto" });
+    if (result.kind === "table") {
+      importedTable = result.table;
+      importedTableFormat = result.format;
+      showColumnMapping(result.table);
+    } else acceptImportedGeoJSON(result.geojson, result.report);
+  } catch (error) {
+    setImportStatus(error?.message || "No fue posible procesar el archivo.", "error");
+  } finally {
+    routeImportFile.disabled = false;
+  }
+}
+
+async function processImportedColumns() {
+  if (!importedTable || !routeImportFile.files?.[0]) return;
+  const mapping = {
+    latitude: $("#import-latitude-column").value,
+    longitude: $("#import-longitude-column").value,
+    label: $("#import-label-column").value,
+    order: $("#import-order-column").value
+  };
+  setImportStatus("Validando y reproyectando las filas…");
+  try {
+    const result = await window.RouteImport.tableToGeoJSON(importedTable, mapping, {
+      sourceName: routeImportFile.files[0].name,
+      format: importedTableFormat,
+      sourceCrs: routeImportCrs.value.trim() || "EPSG:4326"
+    });
+    acceptImportedGeoJSON(result.geojson, result.report);
+  } catch (error) {
+    setImportStatus(error?.message || "No fue posible convertir las columnas.", "error");
+  }
+}
+
+function applyImportedRoute() {
+  if (!importedGeoJSON) return;
+  try {
+    const importedPlan = window.RouteImport.routingStops(importedGeoJSON, { maxStops: 10 });
+    resetPlannedPoints();
+    clearImportedLayers();
+    const stops = importedPlan.stops;
+    setPoint("start", stops[0], stops[0].label);
+    setPoint("end", stops.at(-1), stops.at(-1).label);
+    state.waypoints = stops.slice(1, -1).map(stop => ({
+      id: String(++waypointSequence),
+      point: { lat: stop.lat, lng: stop.lng },
+      label: stop.label,
+      marker: null
+    }));
+    renderWaypointRows();
+    refreshWaypointMarkers();
+    map.fit(stops, 35);
+    const samplingMessage = importedPlan.sampled ? " La geometría se resumió en 10 controles distribuidos sobre el trazado." : "";
+    setMessage(`Ruta importada: origen, ${Math.max(0, stops.length - 2)} puntos obligatorios y destino.${samplingMessage} Pulsa “Calcular y guardar ruta”.`);
+    startInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (error) {
+    setImportStatus(error?.message || "El archivo no contiene suficientes puntos para el planificador.", "error");
+  }
+}
+
+function clearRouteImport() {
+  routeImportFile.value = "";
+  routeImportCrs.value = "";
+  importedTable = null;
+  importedTableFormat = "";
+  importedGeoJSON = null;
+  routeImportMapping.hidden = true;
+  routeImportReport.hidden = true;
+  applyImportedRouteButton.disabled = true;
+  clearImportedLayers();
+  setImportStatus("Selecciona un archivo para comenzar.");
+}
+
 function getRoutes() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
 }
@@ -1147,7 +1346,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=24" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=25" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1591,6 +1790,20 @@ function escapeHtml(value = "") { return value.replace(/[&<>'"]/g, character => 
 
 $("#add-waypoint").addEventListener("click", () => addWaypoint());
 $("#reset").addEventListener("click", resetPlannedPoints);
+$("#route-import-toggle").addEventListener("click", event => {
+  const panel = $("#route-import-panel");
+  const expanded = event.currentTarget.getAttribute("aria-expanded") !== "true";
+  event.currentTarget.setAttribute("aria-expanded", String(expanded));
+  panel.hidden = !expanded;
+  event.currentTarget.closest(".route-import").classList.toggle("open", expanded);
+});
+routeImportFile.addEventListener("change", processSelectedRouteFile);
+routeImportCrs.addEventListener("change", () => {
+  if (routeImportFile.files?.[0] && !importedTable) processSelectedRouteFile();
+});
+$("#process-import-columns").addEventListener("click", processImportedColumns);
+applyImportedRouteButton.addEventListener("click", applyImportedRoute);
+$("#clear-route-import").addEventListener("click", clearRouteImport);
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
