@@ -52,8 +52,12 @@ const state = {
   speedProfile: null,
   speedGradientLayers: [],
   importedLayers: [],
+  importedRouteVisible: true,
   densityLayers: [],
-  densityResult: null
+  densityResult: null,
+  densityVisible: true,
+  densitySource: null,
+  densityStops: []
 };
 
 const $ = selector => document.querySelector(selector);
@@ -1174,8 +1178,9 @@ function clearImportedLayers() {
   state.importedLayers = [];
 }
 
-function renderImportedGeoJSON(geojson) {
+function renderImportedGeoJSON(geojson, fitMap = true) {
   clearImportedLayers();
+  if (!state.importedRouteVisible) return;
   const fitPoints = [];
   const maxPreviewLayers = 500;
   const addFitPoint = coordinate => {
@@ -1210,7 +1215,23 @@ function renderImportedGeoJSON(geojson) {
       }));
     });
   });
-  if (fitPoints.length) map.fit(fitPoints, 35);
+  if (fitMap && fitPoints.length) map.fit(fitPoints, 35);
+}
+
+function updateImportedRouteLayerButton() {
+  const button = $("#toggle-imported-route-layer");
+  const available = Boolean(importedGeoJSON?.features?.length);
+  button.disabled = !available;
+  button.textContent = state.importedRouteVisible ? "Ocultar capa de recorrido" : "Mostrar capa de recorrido";
+  button.setAttribute("aria-pressed", String(state.importedRouteVisible && available));
+}
+
+function setImportedRouteVisible(visible) {
+  if (!importedGeoJSON?.features?.length) return;
+  state.importedRouteVisible = Boolean(visible);
+  if (state.importedRouteVisible) renderImportedGeoJSON(importedGeoJSON, false);
+  else clearImportedLayers();
+  updateImportedRouteLayerButton();
 }
 
 function renderImportReport(report) {
@@ -1230,8 +1251,10 @@ function renderImportReport(report) {
 
 function acceptImportedGeoJSON(geojson, report) {
   importedGeoJSON = geojson;
+  state.importedRouteVisible = true;
   renderImportReport(report);
   renderImportedGeoJSON(geojson);
+  updateImportedRouteLayerButton();
   applyImportedRouteButton.disabled = !(geojson.features || []).length;
   simulateImportedRouteButton.disabled = !window.RouteImport.simulationRoute(geojson);
   const traceSummary = report.tracePoints
@@ -1243,6 +1266,12 @@ function acceptImportedGeoJSON(geojson, report) {
       : `Carga finalizada: ${report.processed} registros correctos.`) + traceSummary,
     report.processed ? "success" : "error"
   );
+  updateDensitySourceAvailability();
+  const fixedPoints = window.DensityAnalysis.stopsFromGeoJSON(geojson);
+  if (fixedPoints.length) {
+    $("#density-point-source").value = "imported";
+    runDensityAnalysis("imported");
+  } else clearDensityAnalysis();
 }
 
 function fillColumnSelect(select, headers, selected, optional = false) {
@@ -1284,6 +1313,9 @@ async function processSelectedRouteFile() {
   routeImportMapping.hidden = true;
   routeImportReport.hidden = true;
   clearImportedLayers();
+  state.importedRouteVisible = true;
+  updateImportedRouteLayerButton();
+  clearDensityAnalysis();
   if (!file) return setImportStatus("Selecciona un archivo para comenzar.");
   setImportStatus(`Procesando ${file.name}…`);
   routeImportFile.disabled = true;
@@ -1346,6 +1378,7 @@ function applyImportedRoute() {
     map.fit(stops, 35);
     const samplingMessage = importedPlan.sampled ? " La geometría se resumió en 10 controles distribuidos sobre el trazado." : "";
     setMessage(`Ruta importada: origen, ${Math.max(0, stops.length - 2)} puntos obligatorios y destino.${samplingMessage} Pulsa “Calcular y guardar ruta”.`);
+    if (window.DensityAnalysis.stopsFromGeoJSON(importedGeoJSON).length) runDensityAnalysis("imported");
     startInput.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (error) {
     setImportStatus(error?.message || "El archivo no contiene suficientes puntos para el planificador.", "error");
@@ -1363,6 +1396,10 @@ function clearRouteImport() {
   applyImportedRouteButton.disabled = true;
   simulateImportedRouteButton.disabled = true;
   clearImportedLayers();
+  state.importedRouteVisible = true;
+  updateImportedRouteLayerButton();
+  clearDensityAnalysis();
+  updateDensitySourceAvailability();
   setImportStatus("Selecciona un archivo para comenzar.");
 }
 
@@ -1371,51 +1408,105 @@ function clearDensityLayers() {
   state.densityLayers = [];
 }
 
-function clearDensityAnalysis() {
-  clearDensityLayers();
-  state.densityResult = null;
-  const summary = $("#density-analysis-summary");
-  if (summary) summary.hidden = true;
-  const downloadButton = $("#download-density-geojson");
-  if (downloadButton) downloadButton.disabled = true;
-  const status = $("#density-analysis-status");
-  if (status) status.textContent = state.waypoints.some(waypoint => waypoint.point)
-    ? "Los puntos cambiaron. Pulsa Analizar densidad para actualizar la capa."
-    : "Agrega puntos obligatorios para generar la capa.";
-}
-
-function runDensityAnalysis() {
-  const stops = state.waypoints.filter(waypoint => waypoint.point).map((waypoint, index) => ({
+function plannedDensityStops() {
+  return state.waypoints.filter(waypoint => waypoint.point).map((waypoint, index) => ({
     lat: waypoint.point.lat,
     lng: waypoint.point.lng,
     label: waypoint.label || `Punto obligatorio ${index + 1}`,
     frequency: waypoint.frequency || 1,
     dwellMinutes: waypoint.dwellMinutes || 0
   }));
+}
+
+function importedDensityStops() {
+  return window.DensityAnalysis.stopsFromGeoJSON(importedGeoJSON);
+}
+
+function updateDensitySourceAvailability() {
+  const select = $("#density-point-source");
+  if (!select) return;
+  select.querySelector('option[value="imported"]').disabled = !importedDensityStops().length;
+  select.querySelector('option[value="planned"]').disabled = !plannedDensityStops().length;
+}
+
+function updateDensityLayerButton() {
+  const button = $("#toggle-density-layer");
+  const available = Boolean(state.densityResult?.capa_raster?.features?.length);
+  button.disabled = !available;
+  button.textContent = state.densityVisible ? "Ocultar capa ráster" : "Mostrar capa ráster";
+  button.setAttribute("aria-pressed", String(state.densityVisible && available));
+}
+
+function renderDensityLayers(result, fitMap = false, stops = []) {
+  clearDensityLayers();
+  if (!state.densityVisible || !result) return;
+  const colors = { Alta: "#E62020", Media: "#FFD700", Baja: "#00A651" };
+  result.capa_raster.features.forEach(feature => {
+    const properties = feature.properties;
+    const points = feature.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+    state.densityLayers.push(map.createPolygon(points, {
+      strokeColor: colors[properties.densidad_nivel],
+      strokeWeight: 1,
+      strokeOpacity: 0.72,
+      fillColor: colors[properties.densidad_nivel],
+      fillOpacity: 0.34 + properties.valor_intensidad * 0.26,
+      title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
+    }));
+  });
+  if (fitMap && stops.length) map.fit(stops, 45);
+}
+
+function setDensityLayerVisible(visible) {
+  if (!state.densityResult) return;
+  state.densityVisible = Boolean(visible);
+  if (state.densityVisible) renderDensityLayers(state.densityResult, false, state.densityStops);
+  else clearDensityLayers();
+  updateDensityLayerButton();
+}
+
+function clearDensityAnalysis() {
+  clearDensityLayers();
+  state.densityResult = null;
+  state.densityVisible = true;
+  state.densitySource = null;
+  state.densityStops = [];
+  const summary = $("#density-analysis-summary");
+  if (summary) summary.hidden = true;
+  const downloadButton = $("#download-density-geojson");
+  if (downloadButton) downloadButton.disabled = true;
+  updateDensityLayerButton();
+  updateDensitySourceAvailability();
+  const status = $("#density-analysis-status");
+  if (status) status.textContent = importedDensityStops().length || plannedDensityStops().length
+    ? "Hay puntos disponibles. Pulsa Analizar densidad para generar la capa."
+    : "Carga una ruta con puntos fijos o agrega puntos obligatorios.";
+}
+
+function runDensityAnalysis(preferredSource = "") {
+  if (typeof preferredSource !== "string") preferredSource = "";
+  const selectedSource = preferredSource || $("#density-point-source").value;
+  const importedStops = importedDensityStops();
+  const plannedStops = plannedDensityStops();
+  const resolvedSource = selectedSource === "auto" ? (importedStops.length ? "imported" : "planned") : selectedSource;
+  const stops = resolvedSource === "imported" ? importedStops : plannedStops;
   try {
+    if (!stops.length) throw new Error(resolvedSource === "imported"
+      ? "El archivo cargado no contiene puntos fijos o marcados."
+      : "Agrega puntos obligatorios en el planificador para analizar su densidad.");
     const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 1000, cellSizeMeters: 500 });
-    clearDensityLayers();
-    const colors = { Alta: "#E62020", Media: "#FFD700", Baja: "#00A651" };
-    result.capa_raster.features.forEach(feature => {
-      const properties = feature.properties;
-      const points = feature.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
-      state.densityLayers.push(map.createPolygon(points, {
-        strokeColor: colors[properties.densidad_nivel],
-        strokeWeight: 1,
-        strokeOpacity: 0.72,
-        fillColor: colors[properties.densidad_nivel],
-        fillOpacity: 0.34 + properties.valor_intensidad * 0.26,
-        title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
-      }));
-    });
     state.densityResult = result;
+    state.densityVisible = true;
+    state.densitySource = resolvedSource;
+    state.densityStops = stops;
+    renderDensityLayers(result, true, stops);
     $("#density-total-points").textContent = String(result.resumen_analisis.total_puntos_analizados);
     $("#density-high-zones").textContent = String(result.resumen_analisis.zonas_alta_densidad);
     $("#density-total-cells").textContent = String(result.capa_raster.features.length);
     $("#density-analysis-summary").hidden = false;
     $("#download-density-geojson").disabled = false;
-    $("#density-analysis-status").textContent = `Capa lista: ${result.capa_raster.features.length} celdas clasificadas con influencia de 1 km.`;
-    map.fit(stops, 45);
+    updateDensityLayerButton();
+    const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
+    $("#density-analysis-status").textContent = `Capa lista con ${sourceLabel}: ${result.capa_raster.features.length} celdas a 1 km.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1452,7 +1543,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=28" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=29" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1865,6 +1956,12 @@ function showPlannedRoute(id) {
   $("#duration").textContent = `${route.durationMin} min`;
   showRouteSegments(segmentsForRoute(route));
   showSpeedPanelForRoute(route);
+  if (state.waypoints.length) {
+    $("#density-point-source").value = "planned";
+    runDensityAnalysis("planned");
+  } else {
+    clearDensityAnalysis();
+  }
   setMessage("Ruta planificada cargada desde el historial.");
 }
 
@@ -1973,6 +2070,9 @@ simulateImportedRouteButton.addEventListener("click", startImportedRouteSimulati
 $("#clear-route-import").addEventListener("click", clearRouteImport);
 $("#run-density-analysis").addEventListener("click", runDensityAnalysis);
 $("#download-density-geojson").addEventListener("click", downloadDensityGeoJSON);
+$("#toggle-imported-route-layer").addEventListener("click", () => setImportedRouteVisible(!state.importedRouteVisible));
+$("#toggle-density-layer").addEventListener("click", () => setDensityLayerVisible(!state.densityVisible));
+$("#density-point-source").addEventListener("change", () => runDensityAnalysis());
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
