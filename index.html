@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=27">
+  <link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body>
   <main class="app-shell">
@@ -165,6 +165,29 @@
             </div>
           </div>
         </section>
+
+        <section class="density-analysis" aria-labelledby="density-analysis-title">
+          <div class="density-analysis-heading">
+            <div>
+              <span>ANÁLISIS GIS</span>
+              <h3 id="density-analysis-title">Capa Ráster de Densidad (Radio 1 km)</h3>
+            </div>
+            <button id="run-density-analysis" type="button">Analizar densidad</button>
+          </div>
+          <p>Calcula una rejilla de influencia alrededor de los puntos obligatorios, ponderada por frecuencia y tiempo de estancia.</p>
+          <div class="density-legend" aria-label="Leyenda de densidad">
+            <span class="high">Alta concentración</span>
+            <span class="medium">Media concentración</span>
+            <span class="low">Baja concentración</span>
+          </div>
+          <p id="density-analysis-status" class="density-analysis-status" role="status" aria-live="polite">Agrega puntos obligatorios para generar la capa.</p>
+          <div id="density-analysis-summary" class="density-analysis-summary" hidden>
+            <div><small>Puntos analizados</small><strong id="density-total-points">0</strong></div>
+            <div><small>Zonas hotspot</small><strong id="density-high-zones">0</strong></div>
+            <div><small>Celdas generadas</small><strong id="density-total-cells">0</strong></div>
+          </div>
+          <button id="download-density-geojson" class="secondary-button" type="button" disabled>Descargar Capa Ráster (.geojson)</button>
+        </section>
       </section>
 
       <section class="history-section">
@@ -185,7 +208,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=27" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=28" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -293,12 +316,13 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=27"></script>
-  <script src="route-export.js?v=27"></script>
-  <script src="gps-speed.js?v=27"></script>
-  <script src="route-import.js?v=27"></script>
-  <script src="route-optimizer.js?v=27"></script>
-  <script src="app.js?v=27"></script>
+  <script src="map-engine.js?v=28"></script>
+  <script src="route-export.js?v=28"></script>
+  <script src="gps-speed.js?v=28"></script>
+  <script src="route-import.js?v=28"></script>
+  <script src="density-analysis.js?v=28"></script>
+  <script src="route-optimizer.js?v=28"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>
 
