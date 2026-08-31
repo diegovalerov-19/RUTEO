@@ -9,7 +9,8 @@ const result = DensityAnalysis.analyze([
 ]);
 
 assert.equal(result.resumen_analisis.total_puntos_analizados, 4);
-assert.equal(result.resumen_analisis.radio_cobertura_km, 1);
+assert.equal(result.resumen_analisis.radio_cobertura_m, 5);
+assert.equal(result.resumen_analisis.radio_cobertura_km, 0.005);
 assert.ok(result.resumen_analisis.zonas_alta_densidad >= 1);
 assert.equal(result.capa_raster.tipo, "FeatureCollection");
 assert.ok(result.capa_raster.features.length > 0);
@@ -19,7 +20,7 @@ assert.ok(result.capa_raster.features.some(feature => feature.properties.densida
 assert.equal(result.seccion_interfaz_usuario.ubicacion_ui, "panel_cargue_ruta");
 const downloadable = DensityAnalysis.downloadableGeoJSON(result);
 assert.equal(downloadable.type, "FeatureCollection");
-assert.equal(downloadable.name, "capa_raster_densidad_1km");
+assert.equal(downloadable.name, "capa_raster_densidad_5m");
 assert.equal(downloadable.features.length, result.capa_raster.features.length);
 
 assert.throws(() => DensityAnalysis.analyze([]), /punto obligatorio/i);
