@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=22">
+  <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
   <main class="app-shell">
@@ -140,7 +140,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=22" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=23" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -213,9 +213,10 @@
             <button id="simulation-locate" type="button">◎ Mi ubicación</button>
             <label for="simulation-speed">Velocidad
               <select id="simulation-speed">
-                <option value="1">1×</option>
+                <option value="1">1× (tiempo real)</option>
                 <option value="2">2×</option>
                 <option value="4">4×</option>
+                <option value="10">10×</option>
               </select>
             </label>
           </div>
@@ -246,9 +247,10 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=22"></script>
-  <script src="route-export.js?v=22"></script>
-  <script src="gps-speed.js?v=22"></script>
-  <script src="app.js?v=22"></script>
+  <script src="map-engine.js?v=23"></script>
+  <script src="route-export.js?v=23"></script>
+  <script src="gps-speed.js?v=23"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>
+
