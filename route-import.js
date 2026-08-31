@@ -139,15 +139,21 @@
   function suggestedMapping(headers) {
     const normalized = headers.map(header => String(header).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""));
     const find = candidates => {
-      const index = normalized.findIndex(header => candidates.includes(header));
+      const preferred = candidates.find(candidate => normalized.includes(candidate));
+      const index = preferred ? normalized.indexOf(preferred) : -1;
       return index >= 0 ? headers[index] : "";
     };
     return {
       latitude: find(["latitud", "latitude", "lat", "y"]),
       longitude: find(["longitud", "longitude", "lon", "lng", "x"]),
-      label: find(["etiqueta", "label", "nombre", "name", "descripcion", "direccion"]),
-      order: find(["orden", "order", "secuencia", "sequence", "id"])
+      label: find(["etiqueta", "label", "nombre", "name", "nombrepunto", "pointname", "descripcion", "direccion"]),
+      order: find(["orden", "order", "secuencia", "sequence", "id"]),
+      recordType: find(["clasepunto", "tipopunto", "tiporegistro", "recordtype", "geometrytype", "clase", "tipo"])
     };
+  }
+
+  function normalizedRecordType(value) {
+    return String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
   }
 
   async function tableToGeoJSON(table, mapping, options = {}) {
@@ -156,7 +162,12 @@
     const format = options.format || "CSV";
     const transformer = await createTransformer(options.sourceCrs || TARGET_CRS, options.dependencies);
     const report = createReport(sourceName, format, transformer.sourceCrs);
-    const features = [];
+    const pointFeatures = [];
+    const traceRows = [];
+    const normalizedHeaders = (table.headers || []).map(header => ({ header, normalized: normalizedRecordType(header) }));
+    const routeNameHeader = normalizedHeaders.find(item => ["recorrido", "ruta", "routename", "nombreruta", "nombredelrecorrido"].includes(item.normalized))?.header;
+    const traceTypes = new Set(["traza", "track", "ruta", "linea", "linestring", "recorrido"]);
+    const markedTypes = new Set(["marcado", "puntomarcado", "marked", "markedpoint", "parada", "stop"]);
     table.rows.forEach((row, index) => {
       const x = parseNumber(row[mapping.longitude]);
       const y = parseNumber(row[mapping.latitude]);
@@ -166,17 +177,52 @@
       catch { return addError(report, index + 2, "No fue posible reproyectar las coordenadas."); }
       if (!validWgs84(coordinate)) return addError(report, index + 2, "Latitud o longitud fuera del rango WGS84.");
       const rawOrder = mapping.order ? parseNumber(row[mapping.order]) : NaN;
-      features.push({
+      const recordType = mapping.recordType ? normalizedRecordType(row[mapping.recordType]) : "";
+      const properties = {
+        label: mapping.label ? String(row[mapping.label] ?? "").trim() : `Punto ${index + 1}`,
+        order: Number.isFinite(rawOrder) ? rawOrder : index + 1,
+        sourceRow: index + 2
+      };
+      if (mapping.recordType && traceTypes.has(recordType)) {
+        traceRows.push({
+          coordinate: [coordinate[0], coordinate[1]],
+          order: properties.order,
+          sourceRow: properties.sourceRow,
+          routeName: routeNameHeader ? String(row[routeNameHeader] ?? "").trim() : ""
+        });
+        report.processed += 1;
+        return;
+      }
+      pointFeatures.push({
         type: "Feature",
         geometry: { type: "Point", coordinates: [coordinate[0], coordinate[1]] },
         properties: {
-          label: mapping.label ? String(row[mapping.label] ?? "").trim() : `Punto ${index + 1}`,
-          order: Number.isFinite(rawOrder) ? rawOrder : index + 1,
-          sourceRow: index + 2
+          ...properties,
+          role: mapping.recordType && markedTypes.has(recordType) ? "marked-point" : "stop",
+          recordType: mapping.recordType ? String(row[mapping.recordType] ?? "").trim() : ""
         }
       });
       report.processed += 1;
     });
+    traceRows.sort((left, right) => left.order - right.order || left.sourceRow - right.sourceRow);
+    const features = [];
+    if (traceRows.length >= 2) {
+      features.push({
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: traceRows.map(item => item.coordinate) },
+        properties: {
+          role: "route",
+          label: traceRows.find(item => item.routeName)?.routeName || "Trazado importado",
+          sourceRecords: traceRows.length
+        }
+      });
+    } else if (traceRows.length === 1) {
+      addError(report, traceRows[0].sourceRow, "El trazado necesita al menos dos coordenadas para formar una línea.");
+      report.processed -= 1;
+    }
+    features.push(...pointFeatures);
+    report.tracePoints = traceRows.length >= 2 ? traceRows.length : 0;
+    report.markedPoints = pointFeatures.filter(feature => feature.properties?.role === "marked-point").length;
     return { geojson: { type: "FeatureCollection", features, importReport: report }, report };
   }
 
@@ -336,7 +382,10 @@
 
   function routingStops(geojson, options = {}) {
     const maxStops = Math.max(2, Number(options.maxStops) || 10);
-    const pointFeatures = (geojson?.features || []).map((feature, index) => ({ feature, index })).filter(item => item.feature?.geometry?.type === "Point");
+    const allFeatures = geojson?.features || [];
+    const pointFeatures = allFeatures.map((feature, index) => ({ feature, index })).filter(item =>
+      item.feature?.geometry?.type === "Point" && item.feature?.properties?.role !== "marked-point"
+    );
     if (pointFeatures.length >= 2) {
       if (pointFeatures.length > maxStops) throw new Error(`El planificador admite hasta ${maxStops} paradas por ruta. El archivo contiene ${pointFeatures.length}.`);
       const stops = pointFeatures.sort((left, right) => {
@@ -351,8 +400,14 @@
       return { stops, source: "points", sampled: false };
     }
 
+    const routeFeatures = allFeatures.filter(feature =>
+      ["LineString", "MultiLineString"].includes(feature?.geometry?.type) && feature?.properties?.role === "route"
+    );
+    const lineFeatures = routeFeatures.length
+      ? routeFeatures
+      : allFeatures.filter(feature => ["LineString", "MultiLineString"].includes(feature?.geometry?.type));
     const vertices = [];
-    (geojson?.features || []).forEach(feature => {
+    lineFeatures.forEach(feature => {
       const geometry = feature?.geometry;
       const lines = geometry?.type === "LineString" ? [geometry.coordinates] : geometry?.type === "MultiLineString" ? geometry.coordinates : [];
       lines.forEach(line => line.forEach(coordinate => {
@@ -394,3 +449,4 @@
   global.RouteImport = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window === "undefined" ? globalThis : window);
+
