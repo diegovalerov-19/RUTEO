@@ -19,23 +19,33 @@ const encoder = new TextEncoder();
   assert.deepEqual(csvResult.geojson.features[0].geometry.coordinates, [-74.07, 4.62]);
 
   const recordedRoute = RouteImport.parseCsv([
-    "recorrido,tipo,secuencia,latitud,longitud,clase_punto,nombre_punto",
-    "Ruta ejemplo,GPS,3,4.63,-74.06,TRAZA,",
-    "Ruta ejemplo,GPS,1,4.61,-74.08,TRAZA,",
-    "Ruta ejemplo,MANUAL,1,4.615,-74.075,MARCADO,Punto marcado 1",
-    "Ruta ejemplo,GPS,2,4.62,-74.07,TRAZA,"
+    "recorrido,tipo,secuencia,latitud,longitud,fecha_hora,velocidad_m_s,clase_punto,nombre_punto",
+    "Ruta ejemplo,GPS,3,4.63,-74.06,2026-08-26T12:41:27.000Z,2.5,TRAZA,",
+    "Ruta ejemplo,GPS,1,4.61,-74.08,2026-08-26T12:41:07.000Z,1.0,TRAZA,",
+    "Ruta ejemplo,MANUAL,1,4.615,-74.075,2026-08-26T12:41:12.000Z,,MARCADO,Punto marcado 1",
+    "Ruta ejemplo,GPS,2,4.62,-74.07,2026-08-26T12:41:17.000Z,1.5,TRAZA,"
   ].join("\n"));
   const recordedMapping = RouteImport.suggestedMapping(recordedRoute.headers);
   assert.equal(recordedMapping.recordType, "clase_punto");
   assert.equal(recordedMapping.label, "nombre_punto");
+  assert.equal(recordedMapping.timestamp, "fecha_hora");
+  assert.equal(recordedMapping.speed, "velocidad_m_s");
   const recordedResult = await RouteImport.tableToGeoJSON(recordedRoute, recordedMapping, { sourceName: "recorrido.csv", format: "CSV" });
   assert.deepEqual(recordedResult.geojson.features.map(feature => feature.geometry.type), ["LineString", "Point"]);
   assert.deepEqual(recordedResult.geojson.features[0].geometry.coordinates, [[-74.08, 4.61], [-74.07, 4.62], [-74.06, 4.63]]);
   assert.equal(recordedResult.geojson.features[0].properties.role, "route");
   assert.equal(recordedResult.geojson.features[1].properties.role, "marked-point");
   assert.equal(recordedResult.geojson.features[1].properties.label, "Punto marcado 1");
+  assert.deepEqual(recordedResult.geojson.features[0].properties.pointData.map(point => point.speed), [1, 1.5, 2.5]);
   assert.equal(recordedResult.report.tracePoints, 3);
   assert.equal(recordedResult.report.markedPoints, 1);
+  assert.equal(recordedResult.report.speedSamples, 3);
+  const simulationRoute = RouteImport.simulationRoute(recordedResult.geojson, { id: "test-route" });
+  assert.equal(simulationRoute.id, "test-route");
+  assert.equal(simulationRoute.name, "Ruta ejemplo");
+  assert.equal(simulationRoute.points.length, 3);
+  assert.equal(simulationRoute.points[1].speed, 1.5);
+  assert.equal(Date.parse(simulationRoute.endedAt) - Date.parse(simulationRoute.startedAt), 20000);
   const recordedStops = RouteImport.routingStops(recordedResult.geojson, { maxStops: 3 });
   assert.equal(recordedStops.source, "geometry");
   assert.deepEqual(recordedStops.stops.map(stop => [stop.lng, stop.lat]), [[-74.08, 4.61], [-74.07, 4.62], [-74.06, 4.63]]);
