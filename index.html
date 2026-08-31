@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
   <main class="app-shell">
@@ -163,16 +163,11 @@
               <button id="simulate-imported-route" class="primary-button" type="button" disabled>▶ Simular recorrido cargado</button>
               <button id="clear-route-import" class="secondary-button" type="button">Limpiar archivo</button>
             </div>
-            <div class="layer-visibility-controls" aria-label="Visibilidad de capas importadas">
-              <button id="toggle-imported-route-layer" type="button" disabled>Ocultar capa de recorrido</button>
-              <button id="toggle-density-layer" type="button" disabled>Ocultar capa ráster</button>
-            </div>
-
             <section class="density-analysis" aria-labelledby="density-analysis-title">
               <div class="density-analysis-heading">
                 <div>
                   <span>ANÁLISIS GIS</span>
-                  <h3 id="density-analysis-title">Capa Ráster de Densidad (Radio 1 km)</h3>
+                  <h3 id="density-analysis-title">Capa Ráster de Densidad (Radio 5 m)</h3>
                 </div>
                 <button id="run-density-analysis" type="button">Analizar densidad</button>
               </div>
@@ -218,7 +213,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=29" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=30" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -300,6 +295,19 @@
             </label>
           </div>
         </section>
+        <section id="layers-panel" class="layers-panel" hidden aria-label="Visibilidad de capas del mapa">
+          <div class="layers-panel-header">
+            <button id="layers-panel-toggle" class="layers-panel-toggle" type="button" aria-controls="layers-panel-body" aria-expanded="false">
+              <span class="layers-panel-heading">CAPAS</span>
+              <strong id="layers-panel-summary">0 visibles</strong>
+              <span class="layers-panel-chevron" aria-hidden="true">⌄</span>
+            </button>
+          </div>
+          <div id="layers-panel-body" class="layers-panel-body" hidden>
+            <button id="toggle-imported-route-layer" type="button" disabled>Ocultar capa de recorrido</button>
+            <button id="toggle-density-layer" type="button" disabled>Ocultar capa ráster</button>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -326,13 +334,13 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=29"></script>
-  <script src="route-export.js?v=29"></script>
-  <script src="gps-speed.js?v=29"></script>
-  <script src="route-import.js?v=29"></script>
-  <script src="density-analysis.js?v=29"></script>
-  <script src="route-optimizer.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="map-engine.js?v=30"></script>
+  <script src="route-export.js?v=30"></script>
+  <script src="gps-speed.js?v=30"></script>
+  <script src="route-import.js?v=30"></script>
+  <script src="density-analysis.js?v=30"></script>
+  <script src="route-optimizer.js?v=30"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>
 
