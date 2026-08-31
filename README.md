@@ -26,6 +26,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - El cuadro desplegable **Velocidades**, ubicado debajo de **Tramos**, muestra la velocidad promedio total, el tiempo acumulado en cada rango y la leyenda de colores; inicia minimizado y puede cerrarse.
 - La captura detecta pérdidas temporales de GPS, mantiene la velocidad promedio previa sin inventar coordenadas, reinicia la media al marcar una parada y suaviza las lecturas cuando regresa la señal.
 - La velocidad actual se muestra durante la grabación y las lecturas atípicas se filtran antes de almacenarlas para evitar picos irreales.
+- La simulación reproduce el recorrido en tiempo real al seleccionar 1×, sin límite de 90 segundos; también ofrece 2×, 4× y 10× para acelerar recorridos largos.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
@@ -65,3 +66,4 @@ Cada recorrido con al menos dos coordenadas ofrece tres descargas:
 - **SHP:** archivo ZIP con el conjunto Shapefile completo en WGS 84 (EPSG:4326).
 
 Las rutas planificadas creadas antes de esta actualización no contienen su geometría completa. Deben calcularse nuevamente para poder simularlas o descargarlas.
+
