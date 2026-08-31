@@ -16,7 +16,7 @@ assert.ok(result.capa_raster.features.length > 0);
 assert.ok(result.capa_raster.features.every(feature => feature.geometry.type === "Polygon"));
 assert.ok(result.capa_raster.features.every(feature => feature.properties.valor_intensidad > 0 && feature.properties.valor_intensidad <= 1));
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Alta"));
-assert.equal(result.seccion_interfaz_usuario.ubicacion_ui, "final_panel_planificar_ruta");
+assert.equal(result.seccion_interfaz_usuario.ubicacion_ui, "panel_cargue_ruta");
 const downloadable = DensityAnalysis.downloadableGeoJSON(result);
 assert.equal(downloadable.type, "FeatureCollection");
 assert.equal(downloadable.name, "capa_raster_densidad_1km");
@@ -26,6 +26,16 @@ assert.throws(() => DensityAnalysis.analyze([]), /punto obligatorio/i);
 assert.equal(DensityAnalysis.levelFor(0.67), "Alta");
 assert.equal(DensityAnalysis.levelFor(0.34), "Media");
 assert.equal(DensityAnalysis.levelFor(0.1), "Baja");
+
+const importedStops = DensityAnalysis.stopsFromGeoJSON({
+  type: "FeatureCollection",
+  features: [
+    { type: "Feature", geometry: { type: "Point", coordinates: [-74.08, 4.61] }, properties: { role: "stop", label: "Ignorado si hay marcados" } },
+    { type: "Feature", geometry: { type: "Point", coordinates: [-74.07, 4.62] }, properties: { role: "marked-point", label: "Fijo", frecuencia: 4, estancia_min: 20 } }
+  ]
+});
+assert.equal(importedStops.length, 1);
+assert.deepEqual(importedStops[0], { lat: 4.62, lng: -74.07, label: "Fijo", frequency: 4, dwellMinutes: 20 });
 
 console.log("density-analysis: rejilla, buffers, intensidad, categorías y GeoJSON aprobados");
 
