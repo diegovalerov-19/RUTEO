@@ -59,6 +59,22 @@
     isVisible() { return this.map.raw.hasLayer(this.layer); }
   }
 
+  class LeafletPolygon {
+    constructor(map, points, options) {
+      this.map = map;
+      this.layer = global.L.polygon(validPoints(points).map(point => [point.lat, point.lng]), {
+        color: options.strokeColor || options.fillColor,
+        weight: options.strokeWeight ?? 1,
+        opacity: options.strokeOpacity ?? 0.8,
+        fillColor: options.fillColor,
+        fillOpacity: options.fillOpacity ?? 0.38
+      }).addTo(map.raw);
+      if (options.title) this.layer.bindPopup(options.title);
+    }
+    remove() { this.map.raw.removeLayer(this.layer); }
+    isVisible() { return this.map.raw.hasLayer(this.layer); }
+  }
+
   class LeafletCircleMarker {
     constructor(map, point, options) {
       this.map = map;
@@ -138,6 +154,7 @@
       this.raw.fitBounds(global.L.latLngBounds(values.map(point => [point.lat, point.lng])), { padding: [padding, padding] });
     }
     createPolyline(points, options = {}) { return new LeafletPolyline(this, points, options); }
+    createPolygon(points, options = {}) { return new LeafletPolygon(this, points, options); }
     createCircleMarker(point, options = {}) { return new LeafletCircleMarker(this, point, options); }
     createCircle(point, options = {}) { return new LeafletCircle(this, point, options); }
     createHtmlMarker(point, options = {}) { return new LeafletHtmlMarker(this, point, options); }
@@ -163,6 +180,27 @@
     setPoints(points) { this.layer.setPath(validPoints(points)); }
     getPoints() { return this.layer.getPath().getArray().map(asPoint); }
     remove() { this.layer.setMap(null); }
+    isVisible() { return Boolean(this.layer.getMap()); }
+  }
+
+  class GooglePolygon {
+    constructor(map, points, options) {
+      this.layer = new global.google.maps.Polygon({
+        map: map.raw,
+        paths: validPoints(points),
+        strokeColor: options.strokeColor || options.fillColor,
+        strokeWeight: options.strokeWeight ?? 1,
+        strokeOpacity: options.strokeOpacity ?? 0.8,
+        fillColor: options.fillColor,
+        fillOpacity: options.fillOpacity ?? 0.38,
+        clickable: Boolean(options.title)
+      });
+      if (options.title) {
+        this.info = new global.google.maps.InfoWindow({ content: options.title });
+        this.layer.addListener("click", event => this.info.open({ map: map.raw, position: event.latLng }));
+      }
+    }
+    remove() { this.info?.close(); this.layer.setMap(null); }
     isVisible() { return Boolean(this.layer.getMap()); }
   }
 
@@ -271,6 +309,7 @@
       this.raw.fitBounds(bounds, padding);
     }
     createPolyline(points, options = {}) { return new GooglePolyline(this, points, options); }
+    createPolygon(points, options = {}) { return new GooglePolygon(this, points, options); }
     createCircleMarker(point, options = {}) { return new GoogleCircleMarker(this, point, options); }
     createCircle(point, options = {}) { return new GoogleCircle(this, point, options); }
     createHtmlMarker(point, options = {}) { return new GoogleHtmlMarker(this, point, options); }
@@ -306,3 +345,4 @@
 
   global.createRuteoMap = createRuteoMap;
 })(window);
+
