@@ -18,6 +18,28 @@ const encoder = new TextEncoder();
   assert.equal(csvResult.report.failed, 1);
   assert.deepEqual(csvResult.geojson.features[0].geometry.coordinates, [-74.07, 4.62]);
 
+  const recordedRoute = RouteImport.parseCsv([
+    "recorrido,tipo,secuencia,latitud,longitud,clase_punto,nombre_punto",
+    "Ruta ejemplo,GPS,3,4.63,-74.06,TRAZA,",
+    "Ruta ejemplo,GPS,1,4.61,-74.08,TRAZA,",
+    "Ruta ejemplo,MANUAL,1,4.615,-74.075,MARCADO,Punto marcado 1",
+    "Ruta ejemplo,GPS,2,4.62,-74.07,TRAZA,"
+  ].join("\n"));
+  const recordedMapping = RouteImport.suggestedMapping(recordedRoute.headers);
+  assert.equal(recordedMapping.recordType, "clase_punto");
+  assert.equal(recordedMapping.label, "nombre_punto");
+  const recordedResult = await RouteImport.tableToGeoJSON(recordedRoute, recordedMapping, { sourceName: "recorrido.csv", format: "CSV" });
+  assert.deepEqual(recordedResult.geojson.features.map(feature => feature.geometry.type), ["LineString", "Point"]);
+  assert.deepEqual(recordedResult.geojson.features[0].geometry.coordinates, [[-74.08, 4.61], [-74.07, 4.62], [-74.06, 4.63]]);
+  assert.equal(recordedResult.geojson.features[0].properties.role, "route");
+  assert.equal(recordedResult.geojson.features[1].properties.role, "marked-point");
+  assert.equal(recordedResult.geojson.features[1].properties.label, "Punto marcado 1");
+  assert.equal(recordedResult.report.tracePoints, 3);
+  assert.equal(recordedResult.report.markedPoints, 1);
+  const recordedStops = RouteImport.routingStops(recordedResult.geojson, { maxStops: 3 });
+  assert.equal(recordedStops.source, "geometry");
+  assert.deepEqual(recordedStops.stops.map(stop => [stop.lng, stop.lat]), [[-74.08, 4.61], [-74.07, 4.62], [-74.06, 4.63]]);
+
   const fakeXlsx = {
     read: () => ({ SheetNames: ["Rutas"], Sheets: { Rutas: {} } }),
     utils: { sheet_to_json: () => [["lat", "lng", "label"], [4.61, -74.08, "A"]] }
@@ -94,3 +116,4 @@ const encoder = new TextEncoder();
   console.error(error);
   process.exitCode = 1;
 });
+
