@@ -148,7 +148,9 @@
       longitude: find(["longitud", "longitude", "lon", "lng", "x"]),
       label: find(["etiqueta", "label", "nombre", "name", "nombrepunto", "pointname", "descripcion", "direccion"]),
       order: find(["orden", "order", "secuencia", "sequence", "id"]),
-      recordType: find(["clasepunto", "tipopunto", "tiporegistro", "recordtype", "geometrytype", "clase", "tipo"])
+      recordType: find(["clasepunto", "tipopunto", "tiporegistro", "recordtype", "geometrytype", "clase", "tipo"]),
+      timestamp: find(["fechahora", "timestamp", "datetime", "fecha", "time"]),
+      speed: find(["velocidadms", "speedms", "speed", "velocidad"])
     };
   }
 
@@ -181,14 +183,18 @@
       const properties = {
         label: mapping.label ? String(row[mapping.label] ?? "").trim() : `Punto ${index + 1}`,
         order: Number.isFinite(rawOrder) ? rawOrder : index + 1,
-        sourceRow: index + 2
+        sourceRow: index + 2,
+        timestamp: mapping.timestamp ? String(row[mapping.timestamp] ?? "").trim() : "",
+        speed: mapping.speed ? parseNumber(row[mapping.speed]) : NaN
       };
       if (mapping.recordType && traceTypes.has(recordType)) {
         traceRows.push({
           coordinate: [coordinate[0], coordinate[1]],
           order: properties.order,
           sourceRow: properties.sourceRow,
-          routeName: routeNameHeader ? String(row[routeNameHeader] ?? "").trim() : ""
+          routeName: routeNameHeader ? String(row[routeNameHeader] ?? "").trim() : "",
+          timestamp: properties.timestamp,
+          speed: Number.isFinite(properties.speed) && properties.speed >= 0 ? properties.speed : null
         });
         report.processed += 1;
         return;
@@ -198,6 +204,7 @@
         geometry: { type: "Point", coordinates: [coordinate[0], coordinate[1]] },
         properties: {
           ...properties,
+          speed: Number.isFinite(properties.speed) && properties.speed >= 0 ? properties.speed : null,
           role: mapping.recordType && markedTypes.has(recordType) ? "marked-point" : "stop",
           recordType: mapping.recordType ? String(row[mapping.recordType] ?? "").trim() : ""
         }
@@ -213,7 +220,8 @@
         properties: {
           role: "route",
           label: traceRows.find(item => item.routeName)?.routeName || "Trazado importado",
-          sourceRecords: traceRows.length
+          sourceRecords: traceRows.length,
+          pointData: traceRows.map(item => ({ timestamp: item.timestamp, speed: item.speed }))
         }
       });
     } else if (traceRows.length === 1) {
@@ -223,7 +231,56 @@
     features.push(...pointFeatures);
     report.tracePoints = traceRows.length >= 2 ? traceRows.length : 0;
     report.markedPoints = pointFeatures.filter(feature => feature.properties?.role === "marked-point").length;
+    report.timedTracePoints = traceRows.filter(item => Number.isFinite(Date.parse(item.timestamp))).length;
+    report.speedSamples = traceRows.filter(item => Number.isFinite(item.speed)).length;
     return { geojson: { type: "FeatureCollection", features, importReport: report }, report };
+  }
+
+  function distanceMeters(from, to) {
+    const radians = degrees => degrees * Math.PI / 180;
+    const latitudeDelta = radians(to.lat - from.lat);
+    const longitudeDelta = radians(to.lng - from.lng);
+    const startLatitude = radians(from.lat);
+    const endLatitude = radians(to.lat);
+    const haversine = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(startLatitude) * Math.cos(endLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+    return 6371008.8 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  }
+
+  function simulationRoute(geojson, options = {}) {
+    const features = geojson?.features || [];
+    const routeFeature = features.find(feature => feature?.geometry?.type === "LineString" && feature?.properties?.role === "route");
+    const coordinates = routeFeature?.geometry?.coordinates || [];
+    const pointData = routeFeature?.properties?.pointData || [];
+    if (coordinates.length < 2 || pointData.length !== coordinates.length) return null;
+    const points = coordinates.map(([lng, lat], index) => ({
+      lat: Number(lat),
+      lng: Number(lng),
+      timestamp: String(pointData[index]?.timestamp || ""),
+      speed: Number.isFinite(Number(pointData[index]?.speed)) && Number(pointData[index]?.speed) >= 0 ? Number(pointData[index].speed) : null
+    }));
+    const times = points.map(point => Date.parse(point.timestamp));
+    const hasTimeline = times.every(Number.isFinite) && times.at(-1) > times[0] && times.every((time, index) => index === 0 || time >= times[index - 1]);
+    if (!hasTimeline) return null;
+    const distance = points.slice(1).reduce((sum, point, index) => sum + distanceMeters(points[index], point), 0);
+    const markedPoints = features.filter(feature => feature?.geometry?.type === "Point" && feature?.properties?.role === "marked-point").map((feature, index) => ({
+      lat: Number(feature.geometry.coordinates[1]),
+      lng: Number(feature.geometry.coordinates[0]),
+      name: String(feature.properties?.label || `Punto marcado ${index + 1}`),
+      timestamp: String(feature.properties?.timestamp || "")
+    }));
+    return {
+      id: options.id || `imported-${Date.now()}`,
+      type: "recorded",
+      imported: true,
+      name: String(routeFeature.properties?.label || options.name || "Recorrido importado"),
+      startedAt: points[0].timestamp,
+      endedAt: points.at(-1).timestamp,
+      pausedMilliseconds: 0,
+      status: "finished",
+      distanceMeters: distance,
+      points,
+      markedPoints
+    };
   }
 
   function sourceFeatures(data) {
@@ -443,7 +500,8 @@
     parseShapefile,
     validateShapefileParts,
     readFile,
-    routingStops
+    routingStops,
+    simulationRoute
   };
 
   global.RouteImport = api;

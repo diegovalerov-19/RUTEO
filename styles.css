@@ -140,7 +140,7 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .import-report strong { margin-top: 2px; overflow: hidden; font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
 .import-report ul { grid-column: 1 / -1; max-height: 95px; margin: 3px 0 0; padding: 7px 7px 7px 22px; overflow-y: auto; border-top: 1px solid #ffffff22; color: #efc6c8; font-size: .6rem; line-height: 1.4; }
 .import-report ul:empty { display: none; }
-.import-actions { display: grid; grid-template-columns: 1fr 110px; gap: 8px; margin-top: 10px; }
+.import-actions { display: grid; grid-template-columns: 1fr 1fr 110px; gap: 8px; margin-top: 10px; }
 .import-actions .primary-button, .import-actions .secondary-button { min-height: 42px; font-size: .68rem; }
 
 .history-section { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--gray-300); }
@@ -289,3 +289,4 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
   .map-settings-actions { grid-template-columns: 1fr; }
   .export-options { right: 0; left: auto; }
 }
+
