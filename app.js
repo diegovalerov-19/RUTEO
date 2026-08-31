@@ -1057,26 +1057,24 @@ form.addEventListener("submit", async event => {
   setMessage("Calculando la mejor ruta…");
   try {
     const routeStops = [state.start, ...state.waypoints.map(waypoint => waypoint.point), state.end];
-    const coords = routeStops.map(point => `${point.lng},${point.lat}`).join(";");
-    const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-    if (!response.ok) throw new Error();
-    const data = await response.json();
-    const route = data.routes?.[0];
-    if (!route) throw new Error();
+    const route = await window.RouteOptimizer.calculateRoute(routeStops, {
+      penaltyFactor: 5,
+      alternatives: 3
+    });
     if (state.plannedLine) map.remove(state.plannedLine);
     clearSpeedGradient();
-    const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    const points = route.points;
     state.plannedLine = null;
     map.fit(points, 35);
     const stopNames = ["Origen", ...state.waypoints.map((_, index) => `Punto ${index + 1}`), "Destino"];
-    const segments = (route.legs || []).map((leg, index) => ({
+    const segments = route.legs.map((leg, index) => ({
       from: stopNames[index] || `Punto ${index}`,
       to: stopNames[index + 1] || `Punto ${index + 1}`,
-      distanceMeters: leg.distance,
-      durationSeconds: leg.duration
+      distanceMeters: leg.distanceMeters,
+      durationSeconds: leg.durationSeconds
     }));
-    const distanceKm = route.distance / 1000;
-    const durationMin = Math.round(route.duration / 60);
+    const distanceKm = route.distanceMeters / 1000;
+    const durationMin = Math.round(route.durationSeconds / 60);
     $("#distance").textContent = `${distanceKm.toFixed(1)} km`;
     $("#duration").textContent = durationMin >= 60 ? `${Math.floor(durationMin / 60)} h ${durationMin % 60} min` : `${durationMin} min`;
     const plannedRoute = {
@@ -1087,18 +1085,28 @@ form.addEventListener("submit", async event => {
       date: dateInput.value,
       time: timeInput.value,
       distanceKm,
-      distanceMeters: route.distance,
+      distanceMeters: route.distanceMeters,
       durationMin,
-      durationMilliseconds: route.duration * 1000,
+      durationMilliseconds: route.durationSeconds * 1000,
       waypoints: state.waypoints.map(waypoint => ({ ...waypoint.point, label: waypoint.label })),
       segments,
+      optimization: route.optimization,
       points
     };
     saveRoute(plannedRoute);
     showRouteSegments(segments);
     showSpeedPanelForRoute(plannedRoute);
-    setMessage(state.waypoints.length ? `Ruta calculada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.` : "Ruta calculada y guardada.");
-  } catch { setMessage("No se pudo calcular la ruta. Verifica los puntos e intenta de nuevo."); }
+    const repetitionMessage = route.optimization.repeatedEdgeTraversals
+      ? ` Se reutilizaron ${route.optimization.repeatedEdgeTraversals} tramos cuando resultó necesario.`
+      : " No fue necesario repetir tramos.";
+    setMessage(state.waypoints.length
+      ? `Ruta optimizada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.${repetitionMessage}`
+      : `Ruta optimizada y guardada.${repetitionMessage}`);
+  } catch (error) {
+    setMessage(error?.code === "NoRoute"
+      ? "No existe una conexión vial entre dos de los puntos seleccionados. Revisa su ubicación."
+      : "No se pudo calcular la ruta optimizada. Verifica los puntos y la conexión e intenta de nuevo.");
+  }
   finally { calculateButton.disabled = false; }
 });
 
@@ -1139,7 +1147,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=23" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=24" alt="" aria-hidden="true">
     </div>`
   };
 }
