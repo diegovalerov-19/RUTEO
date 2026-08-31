@@ -1114,6 +1114,7 @@ document.querySelectorAll("[data-current-location]").forEach(button => button.ad
 
 form.addEventListener("submit", async event => {
   event.preventDefault();
+  setMode("plan");
   if (!state.start || startInput.value.trim() !== state.start.label) {
     if (!await searchPlace("start")) return;
   }
@@ -1176,6 +1177,7 @@ form.addEventListener("submit", async event => {
       ? `Ruta optimizada y guardada pasando por ${state.waypoints.length} puntos obligatorios en orden.${repetitionMessage}`
       : `Ruta optimizada y guardada.${repetitionMessage}`);
     if (state.waypoints.length) runDensityAnalysis();
+    setMode("plan");
   } catch (error) {
     setMessage(error?.code === "NoRoute"
       ? "No existe una conexión vial entre dos de los puntos seleccionados. Revisa su ubicación."
@@ -1488,13 +1490,26 @@ function renderDensityLayers(result, fitMap = false, stops = []) {
     state.densityLayers.push(map.createPolygon(points, {
       strokeColor: colors[properties.densidad_nivel],
       strokeWeight: 1,
-      strokeOpacity: 0.72,
+      strokeOpacity: 0.92,
       fillColor: colors[properties.densidad_nivel],
-      fillOpacity: 0.34 + properties.valor_intensidad * 0.26,
+      fillOpacity: 0.56 + properties.valor_intensidad * 0.28,
       title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
     }));
   });
-  if (fitMap && stops.length) map.fit(stops, 45);
+  if (fitMap) {
+    const hotspot = [...result.capa_raster.features].sort((left, right) =>
+      Number(right.properties?.valor_intensidad || 0) - Number(left.properties?.valor_intensidad || 0)
+    )[0];
+    const ring = hotspot?.geometry?.coordinates?.[0] || [];
+    const vertices = ring.length > 1 ? ring.slice(0, -1) : ring;
+    if (vertices.length) {
+      const center = vertices.reduce((accumulator, [lng, lat]) => ({
+        lat: accumulator.lat + Number(lat) / vertices.length,
+        lng: accumulator.lng + Number(lng) / vertices.length
+      }), { lat: 0, lng: 0 });
+      map.setView(center, 19);
+    } else if (stops.length) map.fit(stops, 45);
+  }
 }
 
 function setDensityLayerVisible(visible) {
@@ -1584,7 +1599,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=30" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=31" alt="" aria-hidden="true">
     </div>`
   };
 }
