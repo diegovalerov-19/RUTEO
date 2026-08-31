@@ -73,6 +73,7 @@ const routeImportStatus = $("#route-import-status");
 const routeImportMapping = $("#route-import-mapping");
 const routeImportReport = $("#route-import-report");
 const applyImportedRouteButton = $("#apply-imported-route");
+const simulateImportedRouteButton = $("#simulate-imported-route");
 let waypointSequence = 0;
 let importedTable = null;
 let importedTableFormat = "";
@@ -1211,8 +1212,9 @@ function acceptImportedGeoJSON(geojson, report) {
   renderImportReport(report);
   renderImportedGeoJSON(geojson);
   applyImportedRouteButton.disabled = !(geojson.features || []).length;
+  simulateImportedRouteButton.disabled = !window.RouteImport.simulationRoute(geojson);
   const traceSummary = report.tracePoints
-    ? ` Trazado: 1 línea con ${report.tracePoints} coordenadas; puntos marcados: ${report.markedPoints || 0}.`
+    ? ` Trazado: 1 línea con ${report.tracePoints} coordenadas; puntos marcados: ${report.markedPoints || 0}; velocidades originales: ${report.speedSamples || 0}.`
     : "";
   setImportStatus(
     (report.failed
@@ -1244,6 +1246,8 @@ function showColumnMapping(table) {
   fillColumnSelect($("#import-label-column"), table.headers, suggested.label, true);
   fillColumnSelect($("#import-order-column"), table.headers, suggested.order, true);
   fillColumnSelect($("#import-record-type-column"), table.headers, suggested.recordType, true);
+  fillColumnSelect($("#import-timestamp-column"), table.headers, suggested.timestamp, true);
+  fillColumnSelect($("#import-speed-column"), table.headers, suggested.speed, true);
   routeImportMapping.hidden = false;
   routeImportReport.hidden = true;
   setImportStatus(`Se encontraron ${table.rows.length} filas. Confirma qué columnas contienen las coordenadas.`);
@@ -1255,6 +1259,7 @@ async function processSelectedRouteFile() {
   importedTableFormat = "";
   importedGeoJSON = null;
   applyImportedRouteButton.disabled = true;
+  simulateImportedRouteButton.disabled = true;
   routeImportMapping.hidden = true;
   routeImportReport.hidden = true;
   clearImportedLayers();
@@ -1282,7 +1287,9 @@ async function processImportedColumns() {
     longitude: $("#import-longitude-column").value,
     label: $("#import-label-column").value,
     order: $("#import-order-column").value,
-    recordType: $("#import-record-type-column").value
+    recordType: $("#import-record-type-column").value,
+    timestamp: $("#import-timestamp-column").value,
+    speed: $("#import-speed-column").value
   };
   setImportStatus("Validando y reproyectando las filas…");
   try {
@@ -1331,6 +1338,7 @@ function clearRouteImport() {
   routeImportMapping.hidden = true;
   routeImportReport.hidden = true;
   applyImportedRouteButton.disabled = true;
+  simulateImportedRouteButton.disabled = true;
   clearImportedLayers();
   setImportStatus("Selecciona un archivo para comenzar.");
 }
@@ -1350,18 +1358,30 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=26" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=27" alt="" aria-hidden="true">
     </div>`
   };
 }
 
 function startRouteSimulation(id) {
+  startSimulationForRoute(getRoutes().find(item => item.id === id));
+}
+
+function startImportedRouteSimulation() {
+  const route = window.RouteImport.simulationRoute(importedGeoJSON);
+  if (!route) {
+    setImportStatus("Para simular respetando la velocidad, la línea debe incluir fecha/hora válida en todas sus coordenadas.", "error");
+    return;
+  }
+  startSimulationForRoute(route);
+}
+
+function startSimulationForRoute(route) {
   if (state.track?.status === "recording") {
     showMapBanner("Finaliza o pausa la captura actual antes de iniciar una simulación.", "warning");
     return;
   }
 
-  const route = getRoutes().find(item => item.id === id);
   const points = window.RouteExport.routePoints(route);
   if (!route || points.length < 2) {
     showMapBanner("Esta ruta no contiene suficientes coordenadas para simularla. Vuelve a calcularla si fue creada en una versión anterior.", "warning", 7000);
@@ -1387,7 +1407,8 @@ function startRouteSimulation(id) {
     cumulativeDistances.push(cumulativeDistances[index - 1] + distanceBetween(latlngs[index - 1], latlngs[index]));
   }
 
-  const originalDurationMs = Math.max(1000, route.type === "recorded" ? getElapsedMilliseconds(route) : (route.durationMilliseconds || route.durationMin * 60000));
+  const cumulativeTimes = route.type === "recorded" ? playbackTimeline(points, route.pausedMilliseconds, cumulativeDistances) : null;
+  const originalDurationMs = Math.max(1000, cumulativeTimes?.at(-1) || (route.type === "recorded" ? getElapsedMilliseconds(route) : (route.durationMilliseconds || route.durationMin * 60000)));
   // En 1×, cada segundo de la grabación equivale a un segundo de reproducción.
   // Las opciones 2×, 4× y 10× aceleran esta misma línea de tiempo real.
   const animationDurationMs = originalDurationMs;
@@ -1401,6 +1422,7 @@ function startRouteSimulation(id) {
     points,
     latlngs,
     cumulativeDistances,
+    cumulativeTimes,
     geometryDistance: cumulativeDistances.at(-1),
     originalDurationMs,
     animationDurationMs,
@@ -1465,7 +1487,16 @@ function renderSimulation(fraction, followVehicle = true) {
   let segmentIndex = 0;
   let segmentFraction = 0;
 
-  if (simulation.geometryDistance > 0) {
+  const simulatedDuration = simulation.originalDurationMs * safeFraction;
+  if (simulation.cumulativeTimes?.length === simulation.latlngs.length) {
+    while (
+      segmentIndex < simulation.cumulativeTimes.length - 2 &&
+      simulation.cumulativeTimes[segmentIndex + 1] < simulatedDuration
+    ) segmentIndex += 1;
+    const segmentStart = simulation.cumulativeTimes[segmentIndex];
+    const segmentDuration = simulation.cumulativeTimes[segmentIndex + 1] - segmentStart;
+    segmentFraction = segmentDuration ? (simulatedDuration - segmentStart) / segmentDuration : 0;
+  } else if (simulation.geometryDistance > 0) {
     const targetDistance = simulation.geometryDistance * safeFraction;
     while (
       segmentIndex < simulation.cumulativeDistances.length - 2 &&
@@ -1496,11 +1527,46 @@ function renderSimulation(fraction, followVehicle = true) {
   if (vehicle) vehicle.style.setProperty("--vehicle-rotation", `${bearingBetween(from, to)}deg`);
   if (followVehicle) map.panTo(current);
 
-  const simulatedDuration = simulation.originalDurationMs * safeFraction;
   const routeDistance = simulation.route.distanceMeters || (simulation.route.distanceKm * 1000) || simulation.geometryDistance;
+  const segmentDistance = simulation.cumulativeDistances[segmentIndex + 1] - simulation.cumulativeDistances[segmentIndex];
+  const travelledDistance = simulation.cumulativeDistances[segmentIndex] + segmentDistance * segmentFraction;
+  const originalSpeedMs = Number(simulation.points[segmentIndex + 1]?.speed);
+  const segmentDurationMs = simulation.cumulativeTimes
+    ? simulation.cumulativeTimes[segmentIndex + 1] - simulation.cumulativeTimes[segmentIndex]
+    : 0;
+  const currentSpeedKmh = Number.isFinite(originalSpeedMs) && originalSpeedMs >= 0
+    ? originalSpeedMs * 3.6
+    : segmentDurationMs > 0 ? segmentDistance / segmentDurationMs * 3600 : 0;
   $("#simulation-progress").value = String(Math.round(safeFraction * 1000));
   $("#simulation-time").textContent = `${formatDuration(simulatedDuration)} / ${formatDuration(simulation.originalDurationMs)}`;
-  $("#simulation-distance").textContent = `${formatDistance(routeDistance * safeFraction)} / ${formatDistance(routeDistance)}`;
+  $("#simulation-distance").textContent = `${formatDistance(Math.min(routeDistance, travelledDistance))} / ${formatDistance(routeDistance)}`;
+  $("#simulation-current-speed").textContent = `${currentSpeedKmh.toFixed(1)} km/h`;
+}
+
+function playbackTimeline(points, pausedMilliseconds = 0, cumulativeDistances = []) {
+  if (!Array.isArray(points) || points.length < 2) return null;
+  const fallbackIndices = [];
+  const durations = points.slice(1).map((point, index) => {
+    const segmentDistance = Number(cumulativeDistances[index + 1]) - Number(cumulativeDistances[index]);
+    const recordedSpeedMs = Number(point.speed);
+    if (Number.isFinite(segmentDistance) && segmentDistance > 0 && Number.isFinite(recordedSpeedMs) && recordedSpeedMs > 0.05) {
+      return segmentDistance / recordedSpeedMs * 1000;
+    }
+    fallbackIndices.push(index);
+    const elapsed = Date.parse(point.timestamp) - Date.parse(points[index].timestamp);
+    return Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : NaN;
+  });
+  if (!durations.every(Number.isFinite) || !durations.some(duration => duration > 0)) return null;
+  let paused = Math.max(0, Number(pausedMilliseconds) || 0);
+  fallbackIndices.sort((left, right) => durations[right] - durations[left]).forEach(index => {
+    if (paused <= 0) return;
+    const removable = Math.min(paused, Math.max(0, durations[index] - 1));
+    durations[index] -= removable;
+    paused -= removable;
+  });
+  const cumulative = [0];
+  durations.forEach(duration => cumulative.push(cumulative.at(-1) + duration));
+  return cumulative.at(-1) > 0 ? cumulative : null;
 }
 
 function bearingBetween(from, to) {
@@ -1807,6 +1873,7 @@ routeImportCrs.addEventListener("change", () => {
 });
 $("#process-import-columns").addEventListener("click", processImportedColumns);
 applyImportedRouteButton.addEventListener("click", applyImportedRoute);
+simulateImportedRouteButton.addEventListener("click", startImportedRouteSimulation);
 $("#clear-route-import").addEventListener("click", clearRouteImport);
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
