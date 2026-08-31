@@ -12,6 +12,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - Camión recolector blanco visto desde arriba como marcador de la simulación y botón grande para recuperar los controles en el lado izquierdo del mapa.
 - Identificación visible del vehículo como camión de basuras y créditos de las personas que desarrollaron la aplicación.
 - Puntos obligatorios ordenados para que una ruta planificada pase por coordenadas o direcciones intermedias antes de llegar al destino.
+- Optimización de rutas por etapas que compara alternativas y aplica una penalización blanda de 5× a los tramos ya utilizados, respetando siempre el orden de los puntos obligatorios y permitiendo retornos por callejones sin salida.
 - Créditos siempre visibles en la versión de escritorio y camión de simulación reducido para no ocultar el mapa.
 - Adición directa de puntos obligatorios tocando el mapa después del origen y el destino, manteniendo su orden de selección.
 - Camión de simulación reducido nuevamente a un tercio de su tamaño anterior.
@@ -66,4 +67,3 @@ Cada recorrido con al menos dos coordenadas ofrece tres descargas:
 - **SHP:** archivo ZIP con el conjunto Shapefile completo en WGS 84 (EPSG:4326).
 
 Las rutas planificadas creadas antes de esta actualización no contienen su geometría completa. Deben calcularse nuevamente para poder simularlas o descargarlas.
-
