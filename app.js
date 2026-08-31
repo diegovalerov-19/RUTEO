@@ -122,9 +122,48 @@ function syncDashboardDock() {
   const dock = $("#map-dashboard-dock");
   if (!dock) return;
   const metricsStack = $("#map-metrics-stack");
+  const layersPanel = $("#layers-panel");
   metricsStack.hidden = $("#route-segments-panel").hidden && $("#speed-panel").hidden;
   metricsStack.classList.toggle("expanded", $("#route-segments-panel").classList.contains("expanded") || $("#speed-panel").classList.contains("expanded"));
-  dock.classList.toggle("has-visible-dashboard", !metricsStack.hidden || !$("#simulation-show").hidden || !$("#simulation-panel").hidden);
+  dock.classList.toggle("has-layer-panel", !layersPanel.hidden);
+  dock.classList.toggle("layers-expanded", !layersPanel.hidden && layersPanel.classList.contains("expanded"));
+  dock.classList.toggle("has-visible-dashboard", !metricsStack.hidden || !$("#simulation-show").hidden || !$("#simulation-panel").hidden || !layersPanel.hidden);
+}
+
+function setLayersPanelExpanded(expanded) {
+  const panel = $("#layers-panel");
+  if (panel.hidden) return;
+  panel.classList.toggle("expanded", expanded);
+  $("#layers-panel-body").hidden = !expanded;
+  $("#layers-panel-toggle").setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#route-segments-panel").classList.remove("expanded");
+    $("#route-segments-body").hidden = true;
+    $("#route-segments-toggle").setAttribute("aria-expanded", "false");
+    $("#speed-panel").classList.remove("expanded");
+    $("#speed-panel-body").hidden = true;
+    $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+    if (state.simulation) setSimulationPanelVisible(false);
+  }
+  syncDashboardDock();
+}
+
+function updateLayersPanelState() {
+  const panel = $("#layers-panel");
+  const importedAvailable = Boolean(importedGeoJSON?.features?.length);
+  const densityAvailable = Boolean(state.densityResult?.capa_raster?.features?.length);
+  const availableCount = Number(importedAvailable) + Number(densityAvailable);
+  const visibleCount = Number(importedAvailable && state.importedRouteVisible) + Number(densityAvailable && state.densityVisible);
+  panel.hidden = availableCount === 0;
+  $("#layers-panel-summary").textContent = availableCount
+    ? `${visibleCount}/${availableCount} ${visibleCount === 1 ? "visible" : "visibles"}`
+    : "0 visibles";
+  if (!availableCount) {
+    panel.classList.remove("expanded");
+    $("#layers-panel-body").hidden = true;
+    $("#layers-panel-toggle").setAttribute("aria-expanded", "false");
+  }
+  syncDashboardDock();
 }
 
 function setRouteSegmentsExpanded(expanded) {
@@ -1224,6 +1263,7 @@ function updateImportedRouteLayerButton() {
   button.disabled = !available;
   button.textContent = state.importedRouteVisible ? "Ocultar capa de recorrido" : "Mostrar capa de recorrido";
   button.setAttribute("aria-pressed", String(state.importedRouteVisible && available));
+  updateLayersPanelState();
 }
 
 function setImportedRouteVisible(visible) {
@@ -1435,6 +1475,7 @@ function updateDensityLayerButton() {
   button.disabled = !available;
   button.textContent = state.densityVisible ? "Ocultar capa ráster" : "Mostrar capa ráster";
   button.setAttribute("aria-pressed", String(state.densityVisible && available));
+  updateLayersPanelState();
 }
 
 function renderDensityLayers(result, fitMap = false, stops = []) {
@@ -1493,7 +1534,7 @@ function runDensityAnalysis(preferredSource = "") {
     if (!stops.length) throw new Error(resolvedSource === "imported"
       ? "El archivo cargado no contiene puntos fijos o marcados."
       : "Agrega puntos obligatorios en el planificador para analizar su densidad.");
-    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 1000, cellSizeMeters: 500 });
+    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 5, cellSizeMeters: 2.5 });
     state.densityResult = result;
     state.densityVisible = true;
     state.densitySource = resolvedSource;
@@ -1506,7 +1547,7 @@ function runDensityAnalysis(preferredSource = "") {
     $("#download-density-geojson").disabled = false;
     updateDensityLayerButton();
     const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
-    $("#density-analysis-status").textContent = `Capa lista con ${sourceLabel}: ${result.capa_raster.features.length} celdas a 1 km.`;
+    $("#density-analysis-status").textContent = `Capa lista con ${sourceLabel}: ${result.capa_raster.features.length} celdas con radio de 5 m.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1520,7 +1561,7 @@ function downloadDensityGeoJSON() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "capa_raster_densidad_1km.geojson";
+  link.download = "capa_raster_densidad_5m.geojson";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1543,7 +1584,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=29" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=30" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -2073,6 +2114,9 @@ $("#download-density-geojson").addEventListener("click", downloadDensityGeoJSON)
 $("#toggle-imported-route-layer").addEventListener("click", () => setImportedRouteVisible(!state.importedRouteVisible));
 $("#toggle-density-layer").addEventListener("click", () => setDensityLayerVisible(!state.densityVisible));
 $("#density-point-source").addEventListener("change", () => runDensityAnalysis());
+$("#layers-panel-toggle").addEventListener("click", event => {
+  setLayersPanelExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
 $("#clear-history").addEventListener("click", () => {
   if (!getRoutes().length || confirm("¿Borrar todos los recorridos guardados en este dispositivo?")) {
     localStorage.removeItem(STORAGE_KEY);
