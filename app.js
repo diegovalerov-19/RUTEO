@@ -35,6 +35,7 @@ const state = {
   startMarker: null,
   endMarker: null,
   plannedLine: null,
+  plannedDensityPath: [],
   watchId: null,
   gpsWatchdogId: null,
   wakeLock: null,
@@ -1138,6 +1139,7 @@ form.addEventListener("submit", async event => {
     if (state.plannedLine) map.remove(state.plannedLine);
     clearSpeedGradient();
     const points = route.points;
+    state.plannedDensityPath = points.map(point => ({ lat: Number(point.lat), lng: Number(point.lng) }));
     state.plannedLine = null;
     map.fit(points, 35);
     const stopNames = ["Origen", ...state.waypoints.map((_, index) => `Punto ${index + 1}`), "Destino"];
@@ -1191,6 +1193,7 @@ function resetPlannedPoints() {
   hideSpeedPanel();
   state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
   state.waypoints = [];
+  state.plannedDensityPath = [];
   clearDensityAnalysis();
   state.waypointSelectionId = null;
   state.pointSelectionType = null;
@@ -1549,7 +1552,15 @@ function runDensityAnalysis(preferredSource = "") {
     if (!stops.length) throw new Error(resolvedSource === "imported"
       ? "El archivo cargado no contiene puntos fijos o marcados."
       : "Agrega puntos obligatorios en el planificador para analizar su densidad.");
-    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 5, cellSizeMeters: 1.25 });
+    const interpolationPath = resolvedSource === "imported"
+      ? window.DensityAnalysis.pathFromGeoJSON(importedGeoJSON)
+      : state.plannedDensityPath;
+    const result = window.DensityAnalysis.analyze(stops, {
+      radiusMeters: 5,
+      cellSizeMeters: 1.25,
+      interpolationPath,
+      maximumInterpolationSegments: 2000
+    });
     state.densityResult = result;
     state.densityVisible = true;
     state.densitySource = resolvedSource;
@@ -1557,12 +1568,12 @@ function runDensityAnalysis(preferredSource = "") {
     renderDensityLayers(result, true, stops);
     $("#density-total-points").textContent = String(result.resumen_analisis.total_puntos_analizados);
     $("#density-high-zones").textContent = String(result.resumen_analisis.zonas_alta_densidad);
-    $("#density-total-cells").textContent = String(result.capa_raster.features.length);
+    $("#density-total-cells").textContent = String(result.resumen_analisis.celdas_generadas);
     $("#density-analysis-summary").hidden = false;
     $("#download-density-geojson").disabled = false;
     updateDensityLayerButton();
     const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
-    $("#density-analysis-status").textContent = `Capa interpolada con ${sourceLabel}: ${result.capa_raster.features.length} celdas alrededor de los puntos, radio de 5 m.`;
+    $("#density-analysis-status").textContent = `Capa interpolada con ${sourceLabel}: ${result.resumen_analisis.celdas_generadas} celdas y ${result.resumen_analisis.segmentos_interpolados} tramos continuos entre todos los puntos fijos.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1599,7 +1610,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=32" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=33" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -2005,6 +2016,7 @@ function showPlannedRoute(id) {
   renderWaypointRows();
   refreshWaypointMarkers();
   state.plannedLine = null;
+  state.plannedDensityPath = points.map(point => ({ lat: Number(point.lat), lng: Number(point.lng) }));
   map.fit(points, 35);
   dateInput.value = route.date;
   timeInput.value = route.time;
