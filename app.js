@@ -52,8 +52,10 @@ const state = {
   routeSegments: [],
   speedProfile: null,
   speedGradientLayers: [],
-  importedLayers: [],
+  importedRouteLayers: [],
+  importedFixedPointLayers: [],
   importedRouteVisible: true,
+  fixedPointsVisible: true,
   densityLayers: [],
   densityResult: null,
   densityVisible: true,
@@ -151,10 +153,13 @@ function setLayersPanelExpanded(expanded) {
 
 function updateLayersPanelState() {
   const panel = $("#layers-panel");
-  const importedAvailable = Boolean(importedGeoJSON?.features?.length);
+  const importedAvailable = importedRouteAvailable();
+  const fixedAvailable = fixedPointsAvailable();
   const densityAvailable = Boolean(state.densityResult?.capa_raster?.features?.length);
-  const availableCount = Number(importedAvailable) + Number(densityAvailable);
-  const visibleCount = Number(importedAvailable && state.importedRouteVisible) + Number(densityAvailable && state.densityVisible);
+  const availableCount = Number(importedAvailable) + Number(fixedAvailable) + Number(densityAvailable);
+  const visibleCount = Number(importedAvailable && state.importedRouteVisible)
+    + Number(fixedAvailable && state.fixedPointsVisible)
+    + Number(densityAvailable && state.densityVisible);
   panel.hidden = availableCount === 0;
   $("#layers-panel-summary").textContent = availableCount
     ? `${visibleCount}/${availableCount} ${visibleCount === 1 ? "visible" : "visibles"}`
@@ -645,6 +650,10 @@ function clearCapturePointMarkers() {
 
 function renderCapturePointMarkers(points = []) {
   clearCapturePointMarkers();
+  if (!state.fixedPointsVisible) {
+    updateFixedPointsLayerButton();
+    return;
+  }
   markedPointsForRoute({ markedPoints: points }).forEach((point, index) => {
     state.capturePointMarkers.push(map.createHtmlMarker(point, {
       className: "capture-point-icon-shell",
@@ -653,6 +662,7 @@ function renderCapturePointMarkers(points = []) {
       html: `<div class="capture-point-marker" aria-label="Punto marcado ${index + 1}">${index + 1}</div>`
     }));
   });
+  updateFixedPointsLayerButton();
 }
 
 function markCurrentCapturePoint() {
@@ -886,7 +896,7 @@ function refreshWaypointMarkers() {
   state.waypoints.forEach((waypoint, index) => {
     if (waypoint.marker) map.remove(waypoint.marker);
     waypoint.marker = null;
-    if (!waypoint.point) return;
+    if (!waypoint.point || !state.fixedPointsVisible) return;
     waypoint.marker = map.createHtmlMarker(waypoint.point, {
       className: "waypoint-icon-shell",
       size: 30,
@@ -894,6 +904,7 @@ function refreshWaypointMarkers() {
       html: `<div class="waypoint-map-marker" aria-label="Punto obligatorio ${index + 1}">${index + 1}</div>`
     });
   });
+  updateFixedPointsLayerButton();
 }
 
 function renderWaypointRows() {
@@ -1218,13 +1229,14 @@ function setImportStatus(text, type = "") {
 }
 
 function clearImportedLayers() {
-  state.importedLayers.forEach(layer => map.remove(layer));
-  state.importedLayers = [];
+  state.importedRouteLayers.forEach(layer => map.remove(layer));
+  state.importedFixedPointLayers.forEach(layer => map.remove(layer));
+  state.importedRouteLayers = [];
+  state.importedFixedPointLayers = [];
 }
 
 function renderImportedGeoJSON(geojson, fitMap = true) {
   clearImportedLayers();
-  if (!state.importedRouteVisible) return;
   const fitPoints = [];
   const maxPreviewLayers = 500;
   const addFitPoint = coordinate => {
@@ -1236,8 +1248,9 @@ function renderImportedGeoJSON(geojson, fitMap = true) {
     if (!geometry) return;
     if (geometry.type === "Point") {
       addFitPoint(geometry.coordinates);
-      if (state.importedLayers.length >= maxPreviewLayers) return;
-      state.importedLayers.push(map.createCircleMarker({ lat: geometry.coordinates[1], lng: geometry.coordinates[0] }, {
+      const specializedMarkersVisible = markedPointsForRoute(state.track).length > 0 || state.waypoints.some(waypoint => waypoint.point);
+      if (!state.fixedPointsVisible || specializedMarkersVisible || state.importedFixedPointLayers.length >= maxPreviewLayers) return;
+      state.importedFixedPointLayers.push(map.createCircleMarker({ lat: geometry.coordinates[1], lng: geometry.coordinates[0] }, {
         radius: 5,
         strokeColor: "#111111",
         strokeWeight: 2,
@@ -1250,8 +1263,8 @@ function renderImportedGeoJSON(geojson, fitMap = true) {
     const lines = geometry.type === "LineString" ? [geometry.coordinates] : geometry.type === "MultiLineString" ? geometry.coordinates : [];
     lines.forEach(line => {
       line.forEach(addFitPoint);
-      if (state.importedLayers.length >= maxPreviewLayers) return;
-      state.importedLayers.push(map.createPolyline(line.map(([lng, lat]) => ({ lat, lng })), {
+      if (!state.importedRouteVisible || state.importedRouteLayers.length >= maxPreviewLayers) return;
+      state.importedRouteLayers.push(map.createPolyline(line.map(([lng, lat]) => ({ lat, lng })), {
         color: "#e30613",
         weight: 5,
         opacity: 0.9,
@@ -1262,9 +1275,23 @@ function renderImportedGeoJSON(geojson, fitMap = true) {
   if (fitMap && fitPoints.length) map.fit(fitPoints, 35);
 }
 
+function importedRouteAvailable() {
+  return Boolean((importedGeoJSON?.features || []).some(feature => ["LineString", "MultiLineString"].includes(feature?.geometry?.type)));
+}
+
+function importedFixedPointsAvailable() {
+  return Boolean((importedGeoJSON?.features || []).some(feature => feature?.geometry?.type === "Point"));
+}
+
+function fixedPointsAvailable() {
+  return importedFixedPointsAvailable()
+    || state.waypoints.some(waypoint => waypoint.point)
+    || markedPointsForRoute(state.track).length > 0;
+}
+
 function updateImportedRouteLayerButton() {
   const button = $("#toggle-imported-route-layer");
-  const available = Boolean(importedGeoJSON?.features?.length);
+  const available = importedRouteAvailable();
   button.disabled = !available;
   button.textContent = state.importedRouteVisible ? "Ocultar capa de recorrido" : "Mostrar capa de recorrido";
   button.setAttribute("aria-pressed", String(state.importedRouteVisible && available));
@@ -1272,11 +1299,28 @@ function updateImportedRouteLayerButton() {
 }
 
 function setImportedRouteVisible(visible) {
-  if (!importedGeoJSON?.features?.length) return;
+  if (!importedRouteAvailable()) return;
   state.importedRouteVisible = Boolean(visible);
-  if (state.importedRouteVisible) renderImportedGeoJSON(importedGeoJSON, false);
-  else clearImportedLayers();
+  renderImportedGeoJSON(importedGeoJSON, false);
   updateImportedRouteLayerButton();
+}
+
+function updateFixedPointsLayerButton() {
+  const button = $("#toggle-fixed-points-layer");
+  const available = fixedPointsAvailable();
+  button.disabled = !available;
+  button.textContent = state.fixedPointsVisible ? "Ocultar puntos fijos" : "Mostrar puntos fijos";
+  button.setAttribute("aria-pressed", String(state.fixedPointsVisible && available));
+  updateLayersPanelState();
+}
+
+function setFixedPointsVisible(visible) {
+  if (!fixedPointsAvailable()) return;
+  state.fixedPointsVisible = Boolean(visible);
+  if (importedGeoJSON?.features?.length) renderImportedGeoJSON(importedGeoJSON, false);
+  renderCapturePointMarkers(markedPointsForRoute(state.track));
+  refreshWaypointMarkers();
+  updateFixedPointsLayerButton();
 }
 
 function renderImportReport(report) {
@@ -1297,9 +1341,11 @@ function renderImportReport(report) {
 function acceptImportedGeoJSON(geojson, report) {
   importedGeoJSON = geojson;
   state.importedRouteVisible = true;
+  state.fixedPointsVisible = true;
   renderImportReport(report);
   renderImportedGeoJSON(geojson);
   updateImportedRouteLayerButton();
+  updateFixedPointsLayerButton();
   applyImportedRouteButton.disabled = !(geojson.features || []).length;
   simulateImportedRouteButton.disabled = !window.RouteImport.simulationRoute(geojson);
   const traceSummary = report.tracePoints
@@ -1359,7 +1405,9 @@ async function processSelectedRouteFile() {
   routeImportReport.hidden = true;
   clearImportedLayers();
   state.importedRouteVisible = true;
+  state.fixedPointsVisible = true;
   updateImportedRouteLayerButton();
+  updateFixedPointsLayerButton();
   clearDensityAnalysis();
   if (!file) return setImportStatus("Selecciona un archivo para comenzar.");
   setImportStatus(`Procesando ${file.name}…`);
@@ -1420,6 +1468,7 @@ function applyImportedRoute() {
     }));
     renderWaypointRows();
     refreshWaypointMarkers();
+    renderImportedGeoJSON(importedGeoJSON, false);
     map.fit(stops, 35);
     const samplingMessage = importedPlan.sampled ? " La geometría se resumió en 10 controles distribuidos sobre el trazado." : "";
     setMessage(`Ruta importada: origen, ${Math.max(0, stops.length - 2)} puntos obligatorios y destino.${samplingMessage} Pulsa “Calcular y guardar ruta”.`);
@@ -1443,6 +1492,7 @@ function clearRouteImport() {
   clearImportedLayers();
   state.importedRouteVisible = true;
   updateImportedRouteLayerButton();
+  updateFixedPointsLayerButton();
   clearDensityAnalysis();
   updateDensitySourceAvailability();
   setImportStatus("Selecciona un archivo para comenzar.");
@@ -1571,7 +1621,7 @@ function runDensityAnalysis(preferredSource = "") {
     $("#download-density-geojson").disabled = false;
     updateDensityLayerButton();
     const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
-    $("#density-analysis-status").textContent = `Superficie interpolada con ${sourceLabel}: ${result.resumen_analisis.celdas_generadas} celdas, sin radio fijo y con resolución automática de ${result.resumen_analisis.tamano_celda_m} m.`;
+    $("#density-analysis-status").textContent = `Superficie calculada exclusivamente con ${result.resumen_analisis.total_puntos_analizados} ${sourceLabel}: ${result.resumen_analisis.celdas_generadas} celdas y resolución automática de ${result.resumen_analisis.tamano_celda_m} m. El trazado del recorrido no participa.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1608,7 +1658,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=34" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=35" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -1643,6 +1693,7 @@ function startSimulationForRoute(route) {
   if (route.type === "recorded") {
     clearCaptureLayers();
     state.track = route;
+    if (importedGeoJSON?.features?.length) renderImportedGeoJSON(importedGeoJSON, false);
     renderCapturePointMarkers(markedPointsForRoute(route));
     pauseCaptureButton.hidden = true;
     markCapturePointButton.hidden = true;
@@ -2138,6 +2189,7 @@ $("#run-density-analysis").addEventListener("click", runDensityAnalysis);
 $("#download-density-geojson").addEventListener("click", downloadDensityGeoJSON);
 $("#toggle-imported-route-layer").addEventListener("click", () => setImportedRouteVisible(!state.importedRouteVisible));
 $("#toggle-density-layer").addEventListener("click", () => setDensityLayerVisible(!state.densityVisible));
+$("#toggle-fixed-points-layer").addEventListener("click", () => setFixedPointsVisible(!state.fixedPointsVisible));
 $("#density-point-source").addEventListener("change", () => runDensityAnalysis());
 $("#layers-panel-toggle").addEventListener("click", event => {
   setLayersPanelExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
