@@ -330,6 +330,7 @@
           estancia_ponderada_min: Number(cell.weightedDwell.toFixed(3)),
           tamano_celda_m: Number(cellSizeMeters.toFixed(2)),
           ancho_banda_interpolacion_m: Number(bandwidthMeters.toFixed(2)),
+          fuente_interpolacion: "solo_puntos_fijos",
           extension_automatica: true
         }
       };
@@ -340,6 +341,8 @@
       radio_cobertura_m: null,
       radio_cobertura_km: null,
       restriccion_radio: false,
+      fuente_interpolacion: "solo_puntos_fijos",
+      trazado_recorrido_excluido: true,
       metodo_interpolacion: "densidad kernel gaussiana adaptativa sobre todos los puntos fijos",
       paleta_colores: { ...DENSITY_COLORS },
       celdas_generadas: cells.length,
