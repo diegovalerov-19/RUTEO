@@ -1496,10 +1496,14 @@ function renderDensityLayers(result, fitMap = false, stops = []) {
       strokeOpacity: 0.92,
       fillColor: colors[properties.densidad_nivel],
       fillOpacity: 0.62 + properties.valor_intensidad * 0.28,
-      title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
+      title: `${properties.densidad_nivel === "Sin concentración" ? "Sin concentración" : `${properties.densidad_nivel} concentración`} · intensidad ${properties.valor_intensidad.toFixed(2)}`
     }));
   });
   if (fitMap) {
+    if (result.resumen_analisis?.restriccion_radio === false && stops.length) {
+      map.fit(stops, 80);
+      return;
+    }
     const hotspot = [...result.capa_raster.features].sort((left, right) =>
       Number(right.properties?.valor_intensidad || 0) - Number(left.properties?.valor_intensidad || 0)
     )[0];
@@ -1552,14 +1556,8 @@ function runDensityAnalysis(preferredSource = "") {
     if (!stops.length) throw new Error(resolvedSource === "imported"
       ? "El archivo cargado no contiene puntos fijos o marcados."
       : "Agrega puntos obligatorios en el planificador para analizar su densidad.");
-    const interpolationPath = resolvedSource === "imported"
-      ? window.DensityAnalysis.pathFromGeoJSON(importedGeoJSON)
-      : state.plannedDensityPath;
     const result = window.DensityAnalysis.analyze(stops, {
-      radiusMeters: 5,
-      cellSizeMeters: 1.25,
-      interpolationPath,
-      maximumInterpolationSegments: 2000
+      maximumCells: 4500
     });
     state.densityResult = result;
     state.densityVisible = true;
@@ -1573,7 +1571,7 @@ function runDensityAnalysis(preferredSource = "") {
     $("#download-density-geojson").disabled = false;
     updateDensityLayerButton();
     const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
-    $("#density-analysis-status").textContent = `Capa interpolada con ${sourceLabel}: ${result.resumen_analisis.celdas_generadas} celdas y ${result.resumen_analisis.segmentos_interpolados} tramos continuos entre todos los puntos fijos.`;
+    $("#density-analysis-status").textContent = `Superficie interpolada con ${sourceLabel}: ${result.resumen_analisis.celdas_generadas} celdas, sin radio fijo y con resolución automática de ${result.resumen_analisis.tamano_celda_m} m.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1587,7 +1585,7 @@ function downloadDensityGeoJSON() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "capa_raster_densidad_5m.geojson";
+  link.download = "capa_raster_densidad.geojson";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1610,7 +1608,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=33" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=34" alt="" aria-hidden="true">
     </div>`
   };
 }
