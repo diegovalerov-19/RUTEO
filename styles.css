@@ -157,9 +157,10 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .density-legend { display: flex; flex-wrap: wrap; gap: 6px; }
 .density-legend span { display: inline-flex; align-items: center; gap: 5px; font-size: .57rem; font-weight: 750; }
 .density-legend span::before { width: 11px; height: 11px; border-radius: 2px; content: ""; }
-.density-legend .high::before { background: #E62020; }
-.density-legend .medium::before { background: #FFD700; }
-.density-legend .low::before { background: #00A651; }
+.density-legend .none::before { background: #ADEEC5; }
+.density-legend .low::before { background: #FFFB7D; }
+.density-legend .high::before { background: #FFB23C; }
+.density-legend .very-high::before { background: #B73225; }
 .density-analysis-status { min-height: 17px; font-weight: 700; }
 .density-analysis-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 10px 0; }
 .density-analysis-summary div { padding: 8px; border-radius: 7px; color: var(--white); background: var(--black); }
