@@ -21,7 +21,11 @@ assert.ok(result.capa_raster.features.some(feature => feature.properties.densida
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Baja"));
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Sin concentración"));
 assert.ok(result.resumen_analisis.celdas_sin_concentracion > 0);
-assert.equal(result.resumen_analisis.metodo_interpolacion, "núcleo lineal continuo");
+assert.equal(result.resumen_analisis.metodo_interpolacion, "núcleo lineal continuo entre todos los puntos fijos");
+assert.ok(result.resumen_analisis.segmentos_interpolados >= 3);
+assert.ok(result.resumen_analisis.longitud_interpolada_m > 0);
+assert.ok(result.capa_raster.features.some(feature => feature.properties.tipo_elemento === "interpolacion_entre_puntos"));
+assert.ok(result.capa_raster.features.some(feature => feature.properties.tipo_elemento === "borde_interpolacion"));
 assert.deepEqual(result.resumen_analisis.paleta_colores, {
   "Sin concentración": "#ADEEC5",
   Baja: "#FFFB7D",
@@ -51,5 +55,23 @@ const importedStops = DensityAnalysis.stopsFromGeoJSON({
 assert.equal(importedStops.length, 1);
 assert.deepEqual(importedStops[0], { lat: 4.62, lng: -74.07, label: "Fijo", frequency: 4, dwellMinutes: 20 });
 
-console.log("density-analysis: rejilla, buffers, intensidad, categorías y GeoJSON aprobados");
+const routeGeoJSON = {
+  type: "FeatureCollection",
+  features: [{
+    type: "Feature",
+    geometry: { type: "LineString", coordinates: [[-74.08175, 4.60971], [-74.0812, 4.6102], [-74.0805, 4.611]] },
+    properties: { role: "route" }
+  }]
+};
+const routePath = DensityAnalysis.pathFromGeoJSON(routeGeoJSON);
+assert.equal(routePath.length, 3);
+const continuous = DensityAnalysis.analyze([
+  { lat: 4.60971, lng: -74.08175, label: "Inicio fijo" },
+  { lat: 4.611, lng: -74.0805, label: "Final fijo" }
+], { radiusMeters: 5, cellSizeMeters: 1.25, interpolationPath: routePath });
+assert.equal(continuous.resumen_analisis.segmentos_interpolados, 2);
+assert.ok(continuous.resumen_analisis.longitud_interpolada_m > 150);
+assert.ok(continuous.capa_raster.features.filter(feature => feature.properties.tipo_elemento === "interpolacion_entre_puntos").every(feature => feature.properties.valor_intensidad > 0));
+
+console.log("density-analysis: rejilla, corredor continuo, intensidad, categorías y GeoJSON aprobados");
 
