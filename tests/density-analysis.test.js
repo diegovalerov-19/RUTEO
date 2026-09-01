@@ -9,8 +9,9 @@ const result = DensityAnalysis.analyze([
 ]);
 
 assert.equal(result.resumen_analisis.total_puntos_analizados, 4);
-assert.equal(result.resumen_analisis.radio_cobertura_m, 5);
-assert.equal(result.resumen_analisis.radio_cobertura_km, 0.005);
+assert.equal(result.resumen_analisis.radio_cobertura_m, null);
+assert.equal(result.resumen_analisis.radio_cobertura_km, null);
+assert.equal(result.resumen_analisis.restriccion_radio, false);
 assert.ok(result.resumen_analisis.zonas_alta_densidad >= 1);
 assert.equal(result.capa_raster.tipo, "FeatureCollection");
 assert.ok(result.capa_raster.features.length > 0);
@@ -21,11 +22,11 @@ assert.ok(result.capa_raster.features.some(feature => feature.properties.densida
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Baja"));
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Sin concentración"));
 assert.ok(result.resumen_analisis.celdas_sin_concentracion > 0);
-assert.equal(result.resumen_analisis.metodo_interpolacion, "núcleo lineal continuo entre todos los puntos fijos");
-assert.ok(result.resumen_analisis.segmentos_interpolados >= 3);
-assert.ok(result.resumen_analisis.longitud_interpolada_m > 0);
-assert.ok(result.capa_raster.features.some(feature => feature.properties.tipo_elemento === "interpolacion_entre_puntos"));
-assert.ok(result.capa_raster.features.some(feature => feature.properties.tipo_elemento === "borde_interpolacion"));
+assert.equal(result.resumen_analisis.metodo_interpolacion, "densidad kernel gaussiana adaptativa sobre todos los puntos fijos");
+assert.ok(result.resumen_analisis.tamano_celda_m > 0);
+assert.ok(result.resumen_analisis.ancho_banda_interpolacion_m > 0);
+assert.ok(result.resumen_analisis.area_modelada_m2 > 0);
+assert.ok(result.capa_raster.features.every(feature => feature.properties.tipo_elemento === "celda_superficie_interpolada"));
 assert.deepEqual(result.resumen_analisis.paleta_colores, {
   "Sin concentración": "#ADEEC5",
   Baja: "#FFFB7D",
@@ -36,7 +37,7 @@ assert.ok(result.capa_raster.features.every(feature => feature.properties.color_
 assert.equal(result.seccion_interfaz_usuario.ubicacion_ui, "panel_cargue_ruta");
 const downloadable = DensityAnalysis.downloadableGeoJSON(result);
 assert.equal(downloadable.type, "FeatureCollection");
-assert.equal(downloadable.name, "capa_raster_densidad_5m");
+assert.equal(downloadable.name, "capa_raster_densidad");
 assert.equal(downloadable.features.length, result.capa_raster.features.length);
 
 assert.throws(() => DensityAnalysis.analyze([]), /punto obligatorio/i);
@@ -68,10 +69,10 @@ assert.equal(routePath.length, 3);
 const continuous = DensityAnalysis.analyze([
   { lat: 4.60971, lng: -74.08175, label: "Inicio fijo" },
   { lat: 4.611, lng: -74.0805, label: "Final fijo" }
-], { radiusMeters: 5, cellSizeMeters: 1.25, interpolationPath: routePath });
-assert.equal(continuous.resumen_analisis.segmentos_interpolados, 2);
-assert.ok(continuous.resumen_analisis.longitud_interpolada_m > 150);
-assert.ok(continuous.capa_raster.features.filter(feature => feature.properties.tipo_elemento === "interpolacion_entre_puntos").every(feature => feature.properties.valor_intensidad > 0));
+], { maximumCells: 800 });
+assert.equal(continuous.resumen_analisis.restriccion_radio, false);
+assert.ok(continuous.capa_raster.features.length > 100);
+assert.ok(continuous.capa_raster.features.every(feature => feature.properties.extension_automatica));
 
-console.log("density-analysis: rejilla, corredor continuo, intensidad, categorías y GeoJSON aprobados");
+console.log("density-analysis: superficie adaptativa sin radio fijo, intensidad, categorías y GeoJSON aprobados");
 
