@@ -12,6 +12,8 @@ assert.equal(result.resumen_analisis.total_puntos_analizados, 4);
 assert.equal(result.resumen_analisis.radio_cobertura_m, null);
 assert.equal(result.resumen_analisis.radio_cobertura_km, null);
 assert.equal(result.resumen_analisis.restriccion_radio, false);
+assert.equal(result.resumen_analisis.fuente_interpolacion, "solo_puntos_fijos");
+assert.equal(result.resumen_analisis.trazado_recorrido_excluido, true);
 assert.ok(result.resumen_analisis.zonas_alta_densidad >= 1);
 assert.equal(result.capa_raster.tipo, "FeatureCollection");
 assert.ok(result.capa_raster.features.length > 0);
@@ -27,6 +29,7 @@ assert.ok(result.resumen_analisis.tamano_celda_m > 0);
 assert.ok(result.resumen_analisis.ancho_banda_interpolacion_m > 0);
 assert.ok(result.resumen_analisis.area_modelada_m2 > 0);
 assert.ok(result.capa_raster.features.every(feature => feature.properties.tipo_elemento === "celda_superficie_interpolada"));
+assert.ok(result.capa_raster.features.every(feature => feature.properties.fuente_interpolacion === "solo_puntos_fijos"));
 assert.deepEqual(result.resumen_analisis.paleta_colores, {
   "Sin concentración": "#ADEEC5",
   Baja: "#FFFB7D",
