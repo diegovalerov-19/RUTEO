@@ -1483,7 +1483,7 @@ function updateDensityLayerButton() {
 function renderDensityLayers(result, fitMap = false, stops = []) {
   clearDensityLayers();
   if (!state.densityVisible || !result) return;
-  const colors = { Alta: "#E62020", Media: "#FFD700", Baja: "#00A651" };
+  const colors = window.DensityAnalysis.DENSITY_COLORS;
   result.capa_raster.features.forEach(feature => {
     const properties = feature.properties;
     const points = feature.geometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
@@ -1492,7 +1492,7 @@ function renderDensityLayers(result, fitMap = false, stops = []) {
       strokeWeight: 1,
       strokeOpacity: 0.92,
       fillColor: colors[properties.densidad_nivel],
-      fillOpacity: 0.56 + properties.valor_intensidad * 0.28,
+      fillOpacity: 0.62 + properties.valor_intensidad * 0.28,
       title: `${properties.densidad_nivel} concentración · intensidad ${properties.valor_intensidad.toFixed(2)}`
     }));
   });
@@ -1549,7 +1549,7 @@ function runDensityAnalysis(preferredSource = "") {
     if (!stops.length) throw new Error(resolvedSource === "imported"
       ? "El archivo cargado no contiene puntos fijos o marcados."
       : "Agrega puntos obligatorios en el planificador para analizar su densidad.");
-    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 5, cellSizeMeters: 2.5 });
+    const result = window.DensityAnalysis.analyze(stops, { radiusMeters: 5, cellSizeMeters: 1.25 });
     state.densityResult = result;
     state.densityVisible = true;
     state.densitySource = resolvedSource;
@@ -1562,7 +1562,7 @@ function runDensityAnalysis(preferredSource = "") {
     $("#download-density-geojson").disabled = false;
     updateDensityLayerButton();
     const sourceLabel = resolvedSource === "imported" ? "puntos fijos del archivo cargado" : "puntos obligatorios del planificador";
-    $("#density-analysis-status").textContent = `Capa lista con ${sourceLabel}: ${result.capa_raster.features.length} celdas con radio de 5 m.`;
+    $("#density-analysis-status").textContent = `Capa interpolada con ${sourceLabel}: ${result.capa_raster.features.length} celdas alrededor de los puntos, radio de 5 m.`;
   } catch (error) {
     clearDensityAnalysis();
     $("#density-analysis-status").textContent = error?.message || "No fue posible generar la capa de densidad.";
@@ -1599,7 +1599,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=31" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=32" alt="" aria-hidden="true">
     </div>`
   };
 }

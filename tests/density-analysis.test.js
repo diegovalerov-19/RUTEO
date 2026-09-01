@@ -15,8 +15,20 @@ assert.ok(result.resumen_analisis.zonas_alta_densidad >= 1);
 assert.equal(result.capa_raster.tipo, "FeatureCollection");
 assert.ok(result.capa_raster.features.length > 0);
 assert.ok(result.capa_raster.features.every(feature => feature.geometry.type === "Polygon"));
-assert.ok(result.capa_raster.features.every(feature => feature.properties.valor_intensidad > 0 && feature.properties.valor_intensidad <= 1));
+assert.ok(result.capa_raster.features.every(feature => feature.properties.valor_intensidad >= 0 && feature.properties.valor_intensidad <= 1));
 assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Alta"));
+assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Muy alta"));
+assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Baja"));
+assert.ok(result.capa_raster.features.some(feature => feature.properties.densidad_nivel === "Sin concentración"));
+assert.ok(result.resumen_analisis.celdas_sin_concentracion > 0);
+assert.equal(result.resumen_analisis.metodo_interpolacion, "núcleo lineal continuo");
+assert.deepEqual(result.resumen_analisis.paleta_colores, {
+  "Sin concentración": "#ADEEC5",
+  Baja: "#FFFB7D",
+  Alta: "#FFB23C",
+  "Muy alta": "#B73225"
+});
+assert.ok(result.capa_raster.features.every(feature => feature.properties.color_hex === DensityAnalysis.DENSITY_COLORS[feature.properties.densidad_nivel]));
 assert.equal(result.seccion_interfaz_usuario.ubicacion_ui, "panel_cargue_ruta");
 const downloadable = DensityAnalysis.downloadableGeoJSON(result);
 assert.equal(downloadable.type, "FeatureCollection");
@@ -24,9 +36,10 @@ assert.equal(downloadable.name, "capa_raster_densidad_5m");
 assert.equal(downloadable.features.length, result.capa_raster.features.length);
 
 assert.throws(() => DensityAnalysis.analyze([]), /punto obligatorio/i);
-assert.equal(DensityAnalysis.levelFor(0.67), "Alta");
-assert.equal(DensityAnalysis.levelFor(0.34), "Media");
-assert.equal(DensityAnalysis.levelFor(0.1), "Baja");
+assert.equal(DensityAnalysis.levelFor(0.72), "Muy alta");
+assert.equal(DensityAnalysis.levelFor(0.42), "Alta");
+assert.equal(DensityAnalysis.levelFor(0.08), "Baja");
+assert.equal(DensityAnalysis.levelFor(0.01), "Sin concentración");
 
 const importedStops = DensityAnalysis.stopsFromGeoJSON({
   type: "FeatureCollection",
