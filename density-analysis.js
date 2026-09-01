@@ -2,8 +2,14 @@
   "use strict";
 
   const DEFAULT_RADIUS_METERS = 5;
-  const DEFAULT_CELL_SIZE_METERS = 2.5;
+  const DEFAULT_CELL_SIZE_METERS = 1.25;
   const EARTH_METERS_PER_DEGREE = 111320;
+  const DENSITY_COLORS = {
+    "Sin concentración": "#ADEEC5",
+    Baja: "#FFFB7D",
+    Alta: "#FFB23C",
+    "Muy alta": "#B73225"
+  };
 
   function validStop(value, index) {
     const lat = Number(value?.lat);
@@ -19,9 +25,10 @@
   }
 
   function levelFor(intensity) {
-    if (intensity >= 0.67) return "Alta";
-    if (intensity >= 0.34) return "Media";
-    return "Baja";
+    if (intensity >= 0.72) return "Muy alta";
+    if (intensity >= 0.42) return "Alta";
+    if (intensity >= 0.08) return "Baja";
+    return "Sin concentración";
   }
 
   function stopsFromGeoJSON(geojson) {
@@ -37,7 +44,7 @@
   }
 
   function highDensityZones(cells) {
-    const high = new Set(cells.filter(cell => cell.level === "Alta").map(cell => `${cell.column}:${cell.row}`));
+    const high = new Set(cells.filter(cell => cell.level === "Alta" || cell.level === "Muy alta").map(cell => `${cell.column}:${cell.row}`));
     let zones = 0;
     while (high.size) {
       zones += 1;
@@ -69,7 +76,8 @@
       weight: stop.frequency * (1 + stop.dwellMinutes / 60)
     }));
     const candidates = new Map();
-    const cellReach = Math.ceil(radiusMeters / cellSizeMeters) + 1;
+    const displayRadiusMeters = radiusMeters + cellSizeMeters;
+    const cellReach = Math.ceil(displayRadiusMeters / cellSizeMeters) + 1;
     projectedStops.forEach(stop => {
       const centerColumn = Math.floor(stop.x / cellSizeMeters);
       const centerRow = Math.floor(stop.y / cellSizeMeters);
@@ -77,7 +85,7 @@
         for (let row = centerRow - cellReach; row <= centerRow + cellReach; row += 1) {
           const centerX = (column + 0.5) * cellSizeMeters;
           const centerY = (row + 0.5) * cellSizeMeters;
-          if (Math.hypot(centerX - stop.x, centerY - stop.y) <= radiusMeters + cellSizeMeters / Math.SQRT2) {
+          if (Math.hypot(centerX - stop.x, centerY - stop.y) <= displayRadiusMeters) {
             candidates.set(`${column}:${row}`, { column, row, centerX, centerY });
           }
         }
@@ -93,18 +101,18 @@
         const distance = Math.hypot(cell.centerX - stop.x, cell.centerY - stop.y);
         if (distance > radiusMeters) return;
         const proximity = 1 - distance / radiusMeters;
-        rawIntensity += stop.weight * proximity * proximity;
+        rawIntensity += stop.weight * proximity;
         pointsInInfluence += 1;
         accumulatedFrequency += stop.frequency;
         accumulatedDwell += stop.dwellMinutes;
       });
       return { ...cell, rawIntensity, pointsInInfluence, accumulatedFrequency, accumulatedDwell };
-    }).filter(cell => cell.rawIntensity > 0);
-    const maximumIntensity = Math.max(...rawCells.map(cell => cell.rawIntensity));
+    });
+    const maximumIntensity = Math.max(0, ...rawCells.map(cell => cell.rawIntensity));
     const cells = rawCells.map(cell => ({
       ...cell,
-      intensity: cell.rawIntensity / maximumIntensity,
-      level: levelFor(cell.rawIntensity / maximumIntensity)
+      intensity: maximumIntensity > 0 ? cell.rawIntensity / maximumIntensity : 0,
+      level: levelFor(maximumIntensity > 0 ? cell.rawIntensity / maximumIntensity : 0)
     }));
 
     const toCoordinate = (x, y) => [
@@ -130,6 +138,7 @@
         },
         properties: {
           densidad_nivel: cell.level,
+          color_hex: DENSITY_COLORS[cell.level],
           valor_intensidad: Number(cell.intensity.toFixed(4)),
           puntos_influencia: cell.pointsInInfluence,
           frecuencia_acumulada: Number(cell.accumulatedFrequency.toFixed(2)),
@@ -145,9 +154,12 @@
       zonas_alta_densidad: highDensityZones(cells),
       radio_cobertura_m: radiusMeters,
       radio_cobertura_km: radiusMeters / 1000,
+      metodo_interpolacion: "núcleo lineal continuo",
+      paleta_colores: { ...DENSITY_COLORS },
       celdas_alta_densidad: cells.filter(cell => cell.level === "Alta").length,
-      celdas_media_densidad: cells.filter(cell => cell.level === "Media").length,
-      celdas_baja_densidad: cells.filter(cell => cell.level === "Baja").length
+      celdas_muy_alta_densidad: cells.filter(cell => cell.level === "Muy alta").length,
+      celdas_baja_densidad: cells.filter(cell => cell.level === "Baja").length,
+      celdas_sin_concentracion: cells.filter(cell => cell.level === "Sin concentración").length
     };
     return {
       resumen_analisis: summary,
@@ -171,7 +183,7 @@
     };
   }
 
-  const api = { DEFAULT_RADIUS_METERS, DEFAULT_CELL_SIZE_METERS, analyze, downloadableGeoJSON, levelFor, stopsFromGeoJSON };
+  const api = { DEFAULT_RADIUS_METERS, DEFAULT_CELL_SIZE_METERS, DENSITY_COLORS, analyze, downloadableGeoJSON, levelFor, stopsFromGeoJSON };
   global.DensityAnalysis = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window === "undefined" ? globalThis : window);
