@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
   <main class="app-shell">
@@ -171,7 +171,7 @@
                 </div>
                 <button id="run-density-analysis" type="button">Analizar densidad</button>
               </div>
-              <p>Interpola cada punto fijo y su entorno de 5 m, ponderado por frecuencia y estancia.</p>
+              <p>Interpola de forma continua todos los puntos fijos, siguiendo el trazado de la ruta y conservando un radio de 5 m.</p>
               <label for="density-point-source">Puntos que se analizarán</label>
               <select id="density-point-source">
                 <option value="auto">Automático: priorizar archivo cargado</option>
@@ -214,7 +214,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=32" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=33" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -335,13 +335,13 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=32"></script>
-  <script src="route-export.js?v=32"></script>
-  <script src="gps-speed.js?v=32"></script>
-  <script src="route-import.js?v=32"></script>
-  <script src="density-analysis.js?v=32"></script>
-  <script src="route-optimizer.js?v=32"></script>
-  <script src="app.js?v=32"></script>
+  <script src="map-engine.js?v=33"></script>
+  <script src="route-export.js?v=33"></script>
+  <script src="gps-speed.js?v=33"></script>
+  <script src="route-import.js?v=33"></script>
+  <script src="density-analysis.js?v=33"></script>
+  <script src="route-optimizer.js?v=33"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>
 
