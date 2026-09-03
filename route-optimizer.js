@@ -19,7 +19,8 @@
       profile: String(options.profile || DEFAULT_OPTIONS.profile),
       penaltyFactor: Math.max(1, finiteNonNegative(options.penaltyFactor, DEFAULT_OPTIONS.penaltyFactor)),
       alternatives: Math.max(1, Math.min(5, Math.round(finiteNonNegative(options.alternatives, DEFAULT_OPTIONS.alternatives)))),
-      fetchFn: options.fetchFn || global.fetch?.bind(global)
+      fetchFn: options.fetchFn || global.fetch?.bind(global),
+      signal: options.signal
     };
   }
 
@@ -121,18 +122,20 @@
       overview: "full",
       geometries: "geojson",
       steps: "false",
-      annotations: "nodes,weight,distance,duration"
+      annotations: "nodes,weight,distance,duration",
+      radiuses: "100;100",
+      continue_straight: "false"
     });
-    const response = await settings.fetchFn(`${settings.endpoint}/route/v1/${settings.profile}/${coordinates}?${query}`);
-    if (!response?.ok) {
-      const error = new Error("El servicio de rutas no respondió correctamente.");
-      error.code = `HTTP_${response?.status || "ERROR"}`;
-      throw error;
-    }
+    const response = await settings.fetchFn(`${settings.endpoint}/route/v1/${settings.profile}/${coordinates}?${query}`, { signal: settings.signal });
     const data = await response.json();
-    if (data?.code !== "Ok" || !Array.isArray(data.routes) || !data.routes.length) {
-      const error = new Error(data?.message || "No existe una conexión vial entre los puntos.");
-      error.code = data?.code || "NoRoute";
+    if (!response?.ok || data?.code !== "Ok" || !Array.isArray(data.routes) || !data.routes.length) {
+      const message = data?.code === "NoSegment"
+        ? "Un punto está a más de 100 m de una vía disponible. Revisa sus coordenadas."
+        : data?.code === "NoRoute"
+          ? "No existe una conexión vial entre los puntos."
+          : data?.message || (response?.ok ? "No existe una conexión vial entre los puntos." : "El servicio de rutas no respondió correctamente.");
+      const error = new Error(message);
+      error.code = data?.code || `HTTP_${response?.status || "ERROR"}`;
       throw error;
     }
     return data.routes;

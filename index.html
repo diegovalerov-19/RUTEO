@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=38">
 </head>
 <body>
   <main class="app-shell">
@@ -255,7 +255,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=37" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=38" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -300,6 +300,20 @@
               <li><span class="medium"></span>Amarillo: velocidad media</li>
               <li><span class="high"></span>Verde: velocidad alta</li>
             </ul>
+          </div>
+        </section>
+        <section id="route-info-panel" class="route-info-panel" hidden aria-label="Inicio, fin y visibilidad del recorrido">
+          <div class="route-info-header">
+            <button id="route-info-toggle" class="route-info-toggle" type="button" aria-controls="route-info-body" aria-expanded="false">
+              <span class="route-info-heading">RECORRIDO</span>
+              <strong id="route-info-summary">Visible</strong>
+              <span class="route-info-chevron" aria-hidden="true">⌄</span>
+            </button>
+          </div>
+          <div id="route-info-body" class="route-info-body" hidden>
+            <div class="route-endpoint-copy route-start-copy"><small>Inicio</small><strong id="route-info-start">—</strong></div>
+            <div class="route-endpoint-copy route-end-copy"><small>Final</small><strong id="route-info-end">—</strong></div>
+            <button id="toggle-displayed-route" type="button" aria-pressed="false">Ocultar recorrido</button>
           </div>
         </section>
         </div>
@@ -377,15 +391,14 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=37"></script>
-  <script src="route-export.js?v=37"></script>
-  <script src="gps-speed.js?v=37"></script>
-  <script src="route-import.js?v=37"></script>
-  <script src="density-analysis.js?v=37"></script>
-  <script src="route-optimizer.js?v=37"></script>
-  <script src="dijkstra-routing.js?v=37"></script>
-  <script src="mandatory-routing.js?v=37"></script>
-  <script src="app.js?v=37"></script>
+  <script src="map-engine.js?v=38"></script>
+  <script src="route-export.js?v=38"></script>
+  <script src="gps-speed.js?v=38"></script>
+  <script src="route-import.js?v=38"></script>
+  <script src="density-analysis.js?v=38"></script>
+  <script src="route-optimizer.js?v=38"></script>
+  <script src="dijkstra-routing.js?v=38"></script>
+  <script src="mandatory-routing.js?v=38"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>
-

@@ -52,6 +52,10 @@ const state = {
   routeSegments: [],
   speedProfile: null,
   speedGradientLayers: [],
+  displayedRoute: null,
+  displayedRouteVisible: true,
+  routeStartMarker: null,
+  routeEndMarker: null,
   importedRouteLayers: [],
   importedFixedPointLayers: [],
   importedRouteVisible: true,
@@ -104,6 +108,7 @@ function setMode(mode) {
     hideRouteSegments();
     hideSpeedPanel();
     clearSpeedGradient();
+    hideRouteInfoPanel();
   }
   state.mode = mode;
   document.querySelectorAll(".mode-tab").forEach(button => button.classList.toggle("active", button.dataset.mode === mode));
@@ -128,8 +133,8 @@ function syncDashboardDock() {
   if (!dock) return;
   const metricsStack = $("#map-metrics-stack");
   const layersPanel = $("#layers-panel");
-  metricsStack.hidden = $("#route-segments-panel").hidden && $("#speed-panel").hidden;
-  metricsStack.classList.toggle("expanded", $("#route-segments-panel").classList.contains("expanded") || $("#speed-panel").classList.contains("expanded"));
+  metricsStack.hidden = $("#route-segments-panel").hidden && $("#speed-panel").hidden && $("#route-info-panel").hidden;
+  metricsStack.classList.toggle("expanded", $("#route-segments-panel").classList.contains("expanded") || $("#speed-panel").classList.contains("expanded") || $("#route-info-panel").classList.contains("expanded"));
   dock.classList.toggle("has-layer-panel", !layersPanel.hidden);
   dock.classList.toggle("layers-expanded", !layersPanel.hidden && layersPanel.classList.contains("expanded"));
   dock.classList.toggle("has-visible-dashboard", !metricsStack.hidden || !$("#simulation-show").hidden || !$("#simulation-panel").hidden || !layersPanel.hidden);
@@ -148,6 +153,9 @@ function setLayersPanelExpanded(expanded) {
     $("#speed-panel").classList.remove("expanded");
     $("#speed-panel-body").hidden = true;
     $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+    $("#route-info-panel").classList.remove("expanded");
+    $("#route-info-body").hidden = true;
+    $("#route-info-toggle").setAttribute("aria-expanded", "false");
     if (state.simulation) setSimulationPanelVisible(false);
   }
   syncDashboardDock();
@@ -185,6 +193,9 @@ function setRouteSegmentsExpanded(expanded) {
     $("#speed-panel").classList.remove("expanded");
     $("#speed-panel-body").hidden = true;
     $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+    $("#route-info-panel").classList.remove("expanded");
+    $("#route-info-body").hidden = true;
+    $("#route-info-toggle").setAttribute("aria-expanded", "false");
   }
   if (expanded && state.simulation) setSimulationPanelVisible(false);
   syncDashboardDock();
@@ -374,6 +385,9 @@ function setSpeedPanelExpanded(expanded) {
     $("#route-segments-panel").classList.remove("expanded");
     $("#route-segments-body").hidden = true;
     $("#route-segments-toggle").setAttribute("aria-expanded", "false");
+    $("#route-info-panel").classList.remove("expanded");
+    $("#route-info-body").hidden = true;
+    $("#route-info-toggle").setAttribute("aria-expanded", "false");
     if (state.simulation) setSimulationPanelVisible(false);
   }
   syncDashboardDock();
@@ -402,6 +416,97 @@ function showSpeedPanelForRoute(route) {
   $("#speed-panel").hidden = false;
   setSpeedPanelExpanded(false);
   renderSpeedGradient(route, profile);
+  syncDashboardDock();
+}
+
+function setRouteInfoExpanded(expanded) {
+  const panel = $("#route-info-panel");
+  if (panel.hidden) return;
+  panel.classList.toggle("expanded", expanded);
+  $("#route-info-body").hidden = !expanded;
+  $("#route-info-toggle").setAttribute("aria-expanded", String(expanded));
+  if (expanded) {
+    $("#route-segments-panel").classList.remove("expanded");
+    $("#route-segments-body").hidden = true;
+    $("#route-segments-toggle").setAttribute("aria-expanded", "false");
+    $("#speed-panel").classList.remove("expanded");
+    $("#speed-panel-body").hidden = true;
+    $("#speed-panel-toggle").setAttribute("aria-expanded", "false");
+    if (state.simulation) setSimulationPanelVisible(false);
+  }
+  syncDashboardDock();
+}
+
+function clearRouteEndpointMarkers() {
+  ["routeStartMarker", "routeEndMarker"].forEach(key => {
+    if (state[key]) map.remove(state[key]);
+    state[key] = null;
+  });
+}
+
+function renderRouteEndpointMarkers(route) {
+  clearRouteEndpointMarkers();
+  const points = window.RouteExport.routePoints(route);
+  if (points.length < 2) return;
+  state.routeStartMarker = map.createHtmlMarker(points[0], {
+    className: "route-endpoint-icon-shell",
+    size: 56,
+    zIndex: 940,
+    html: '<div class="route-endpoint-marker start" aria-label="Inicio del recorrido">INICIO</div>'
+  });
+  state.routeEndMarker = map.createHtmlMarker(points.at(-1), {
+    className: "route-endpoint-icon-shell",
+    size: 56,
+    zIndex: 940,
+    html: '<div class="route-endpoint-marker end" aria-label="Final del recorrido">FIN</div>'
+  });
+}
+
+function routeEndpointName(route, endpoint) {
+  const value = String(route?.[endpoint] || "").trim();
+  if (value) return value;
+  const points = window.RouteExport.routePoints(route);
+  const point = endpoint === "start" ? points[0] : points.at(-1);
+  return point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : "—";
+}
+
+function setDisplayedRouteVisible(visible) {
+  if (!state.displayedRoute) return;
+  state.displayedRouteVisible = Boolean(visible);
+  if (state.displayedRouteVisible) {
+    const profile = speedProfileForRoute(state.displayedRoute);
+    renderSpeedGradient(state.displayedRoute, profile);
+  } else {
+    clearSpeedGradient();
+  }
+  $("#route-info-summary").textContent = state.displayedRouteVisible ? "Visible" : "Oculto";
+  $("#toggle-displayed-route").textContent = state.displayedRouteVisible ? "Ocultar recorrido" : "Mostrar recorrido";
+  $("#toggle-displayed-route").setAttribute("aria-pressed", String(!state.displayedRouteVisible));
+}
+
+function showRouteInfoForRoute(route) {
+  if (window.RouteExport.routePoints(route).length < 2) return hideRouteInfoPanel();
+  state.displayedRoute = route;
+  state.displayedRouteVisible = true;
+  $("#route-info-start").textContent = routeEndpointName(route, "start");
+  $("#route-info-end").textContent = routeEndpointName(route, "end");
+  $("#route-info-summary").textContent = "Visible";
+  $("#toggle-displayed-route").textContent = "Ocultar recorrido";
+  $("#toggle-displayed-route").setAttribute("aria-pressed", "false");
+  $("#route-info-panel").hidden = false;
+  renderRouteEndpointMarkers(route);
+  setRouteInfoExpanded(false);
+  syncDashboardDock();
+}
+
+function hideRouteInfoPanel() {
+  state.displayedRoute = null;
+  state.displayedRouteVisible = true;
+  clearRouteEndpointMarkers();
+  $("#route-info-panel").classList.remove("expanded");
+  $("#route-info-body").hidden = true;
+  $("#route-info-toggle").setAttribute("aria-expanded", "false");
+  $("#route-info-panel").hidden = true;
   syncDashboardDock();
 }
 
@@ -778,6 +883,7 @@ function finishCapture() {
   if (finishedPoints.length) map.fit(finishedPoints, 35);
   showRouteSegments(segmentsForRoute(state.track));
   showSpeedPanelForRoute(state.track);
+  showRouteInfoForRoute(state.track);
 }
 
 function stopWatchingPosition() {
@@ -1193,6 +1299,7 @@ form.addEventListener("submit", async event => {
     saveRoute(plannedRoute);
     showRouteSegments(segments);
     showSpeedPanelForRoute(plannedRoute);
+    showRouteInfoForRoute(plannedRoute);
     const repetitionMessage = route.optimization.repeatedEdgeTraversals
       ? ` Se reutilizaron ${route.optimization.repeatedEdgeTraversals} tramos cuando resultó necesario.`
       : " No fue necesario repetir tramos.";
@@ -1212,6 +1319,7 @@ form.addEventListener("submit", async event => {
 function resetPlannedPoints() {
   clearSpeedGradient();
   hideSpeedPanel();
+  hideRouteInfoPanel();
   state.waypoints.forEach(waypoint => { if (waypoint.marker) map.remove(waypoint.marker); });
   state.waypoints = [];
   state.plannedDensityPath = [];
@@ -1568,6 +1676,7 @@ async function calculateMandatoryRoute(event) {
     clearSpeedGradient();
     showRouteSegments(route.legs);
     showSpeedPanelForRoute(plannedRoute);
+    showRouteInfoForRoute(plannedRoute);
     map.fit(route.points, 35);
     $("#distance").textContent = formatDistance(route.distanceMeters);
     $("#duration").textContent = formatSegmentDuration(route.durationSeconds);
@@ -1582,10 +1691,15 @@ async function calculateMandatoryRoute(event) {
     }));
     $("#dijkstra-result").hidden = false;
     $("#dijkstra-status").className = "dijkstra-status success";
-    const orderMessage = route.optimization.strategy === "dijkstra-road-time"
+    const orderMessage = route.optimization.orderStrategy === "dijkstra-road-time"
       ? "Orden optimizado según los tiempos viales consultados."
       : "Orden original conservado; no se optimizó el orden de visita.";
-    $("#dijkstra-status").textContent = `${orderMessage} Ruta mostrada en el mapa y guardada con todas las paradas.${route.maxSnapMeters > 30 ? ` Ajuste máximo a una vía: ${Math.round(route.maxSnapMeters)} m.` : ""}`;
+    const repeatMessage = route.optimization.repeatAvoidanceApplied
+      ? route.optimization.repeatedEdgeTraversals
+        ? ` Se reutilizaron ${route.optimization.repeatedEdgeTraversals} tramos únicamente cuando la alternativa penalizada no era mejor.`
+        : " No fue necesario repetir calles."
+      : " Se conservaron todas las paradas; por el tamaño del recorrido no se evaluaron alternativas calle por calle.";
+    $("#dijkstra-status").textContent = `${orderMessage} Ruta mostrada en el mapa y guardada con todas las paradas.${repeatMessage}${route.maxSnapMeters > 30 ? ` Ajuste máximo a una vía: ${Math.round(route.maxSnapMeters)} m.` : ""}`;
   } catch (error) {
     if (!controller.signal.aborted) {
       $("#dijkstra-status").className = "dijkstra-status error";
@@ -1758,7 +1872,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=37" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=38" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -2138,6 +2252,7 @@ function showRecordedRoute(id) {
   finishCaptureButton.hidden = true;
   showRouteSegments(segmentsForRoute(route));
   showSpeedPanelForRoute(route);
+  showRouteInfoForRoute(route);
 }
 
 function showPlannedRoute(id) {
@@ -2173,6 +2288,7 @@ function showPlannedRoute(id) {
   $("#duration").textContent = `${route.durationMin} min`;
   showRouteSegments(segmentsForRoute(route));
   showSpeedPanelForRoute(route);
+  showRouteInfoForRoute(route);
   if (state.waypoints.length) {
     $("#density-point-source").value = "planned";
     runDensityAnalysis("planned");
@@ -2187,6 +2303,7 @@ function deleteRoute(id) {
   hideRouteSegments();
   hideSpeedPanel();
   clearSpeedGradient();
+  hideRouteInfoPanel();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(getRoutes().filter(route => route.id !== id)));
   renderHistory();
 }
@@ -2309,6 +2426,7 @@ $("#clear-history").addEventListener("click", () => {
     hideRouteSegments();
     hideSpeedPanel();
     clearSpeedGradient();
+    hideRouteInfoPanel();
     renderHistory();
   }
 });
@@ -2326,6 +2444,10 @@ $("#speed-panel-toggle").addEventListener("click", event => {
   setSpeedPanelExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
 });
 $("#speed-panel-close").addEventListener("click", hideSpeedPanel);
+$("#route-info-toggle").addEventListener("click", event => {
+  setRouteInfoExpanded(event.currentTarget.getAttribute("aria-expanded") !== "true");
+});
+$("#toggle-displayed-route").addEventListener("click", () => setDisplayedRouteVisible(!state.displayedRouteVisible));
 $("#simulation-hide").addEventListener("click", () => setSimulationPanelVisible(false));
 $("#simulation-details-toggle").addEventListener("click", event => {
   setSimulationDetailsVisible(event.currentTarget.getAttribute("aria-expanded") !== "true");
@@ -2359,4 +2481,3 @@ initApp().catch(error => {
     banner.hidden = false;
   }
 });
-

@@ -3,6 +3,7 @@
 
   const MAX_STOPS = 100;
   const MAX_OPTIMIZED_STOPS = 12;
+  const MAX_EDGE_PENALTY_STOPS = 30;
   const ENDPOINT = "https://router.project-osrm.org";
 
   function point(value, fallbackLabel) {
@@ -134,12 +135,57 @@
     }
     if (options.signal?.aborted) throw new DOMException("Cálculo cancelado", "AbortError");
     const orderedStops = order.indices.map(index => stops[index]);
+    const nonNegative = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
+    const orderStrategy = orderMode === "optimize" ? "dijkstra-road-time" : "preserved-stop-order";
+    const routeOptimizer = options.routeOptimizer || global.RouteOptimizer;
+
+    if (routeOptimizer?.calculateRoute && orderedStops.length <= MAX_EDGE_PENALTY_STOPS) {
+      const optimized = await routeOptimizer.calculateRoute(orderedStops, {
+        fetchFn: options.fetchFn,
+        signal: options.signal,
+        penaltyFactor: options.penaltyFactor ?? 5,
+        alternatives: options.alternatives ?? 3
+      });
+      if (!Array.isArray(optimized?.points) || optimized.points.length < 2 || !Array.isArray(optimized.legs) || optimized.legs.length !== orderedStops.length - 1) {
+        throw new Error("El servicio devolvió una ruta incompleta. No se guardaron cambios.");
+      }
+      if (!nonNegative(optimized.distanceMeters) || !nonNegative(optimized.durationSeconds)
+        || optimized.legs.some(leg => !nonNegative(leg.distanceMeters) || !nonNegative(leg.durationSeconds))) {
+        throw new Error("El servicio devolvió distancias o tiempos inválidos.");
+      }
+      return {
+        orderedStops,
+        indices: order.indices,
+        points: optimized.points.map(coordinate => point(coordinate, "trazado calculado")),
+        distanceMeters: optimized.distanceMeters,
+        durationSeconds: optimized.durationSeconds,
+        legs: optimized.legs.map((leg, index) => ({
+          from: orderedStops[index].label,
+          to: orderedStops[index + 1].label,
+          distanceMeters: leg.distanceMeters,
+          durationSeconds: leg.durationSeconds,
+          selectedAlternative: leg.selectedAlternative,
+          alternativesEvaluated: leg.alternativesEvaluated,
+          repeatedEdgeTraversals: leg.repeatedEdgeTraversals
+        })),
+        optimization: {
+          ...optimized.optimization,
+          strategy: `${orderStrategy}-soft-edge-penalty`,
+          orderStrategy,
+          matrixDurationSeconds: order.durationSeconds,
+          repeatAvoidanceApplied: true
+        },
+        maxSnapMeters: 0
+      };
+    }
+
+    // En recorridos extraordinariamente grandes se conserva una sola consulta para no
+    // saturar el servicio público; nunca se omiten paradas ni se bloquea un callejón.
     const data = await request("route", orderedStops, { overview: "full", geometries: "geojson", steps: "false", alternatives: "false", continue_straight: "false" }, options);
     const route = data.routes?.[0];
     if (!route || !Array.isArray(route.legs) || route.legs.length !== orderedStops.length - 1 || !Array.isArray(route.geometry?.coordinates) || route.geometry.coordinates.length < 2) {
       throw new Error("El servicio devolvió una ruta incompleta. No se guardaron cambios.");
     }
-    const nonNegative = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
     if (!nonNegative(route.distance) || !nonNegative(route.duration) || route.legs.some(leg => !nonNegative(leg.distance) || !nonNegative(leg.duration))) {
       throw new Error("El servicio devolvió distancias o tiempos inválidos.");
     }
@@ -148,13 +194,12 @@
       orderedStops, indices: order.indices, points,
       distanceMeters: route.distance, durationSeconds: route.duration,
       legs: route.legs.map((leg, index) => ({ from: orderedStops[index].label, to: orderedStops[index + 1].label, distanceMeters: leg.distance, durationSeconds: leg.duration })),
-      optimization: { strategy: orderMode === "optimize" ? "dijkstra-road-time" : "preserved-stop-order", matrixDurationSeconds: order.durationSeconds },
+      optimization: { strategy: orderStrategy, orderStrategy, matrixDurationSeconds: order.durationSeconds, repeatAvoidanceApplied: false },
       maxSnapMeters: Math.max(0, ...(data.waypoints || []).map(stop => Number(stop.distance) || 0))
     };
   }
 
-  const api = { MAX_STOPS, MAX_OPTIMIZED_STOPS, fromPlanner, fromGeoJSON, context, validateContext, orderFromMatrix, calculate };
+  const api = { MAX_STOPS, MAX_OPTIMIZED_STOPS, MAX_EDGE_PENALTY_STOPS, fromPlanner, fromGeoJSON, context, validateContext, orderFromMatrix, calculate };
   global.MandatoryRouting = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window === "undefined" ? globalThis : window);
-
