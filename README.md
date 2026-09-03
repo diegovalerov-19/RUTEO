@@ -90,7 +90,9 @@ El recuadro **Calcular la mejor ruta en una red** empieza cerrado. Pulsa su enca
 - **Conservar el orden actual:** permite hasta 100 puntos contando origen/destino, sin eliminar, muestrear ni reordenar paradas; este modo no se presenta como una optimización del orden.
 - Al calcular se dibuja y guarda una ruta nueva, disponible para simular y exportar desde el historial; no se modifica el archivo original. Cambiar puntos o fuente cancela una consulta pendiente y descarta resultados obsoletos.
 
-`mandatory-routing.js` extrae las fuentes y consulta OSRM Table/Route; `dijkstra-routing.js` mantiene el algoritmo puro. Las coordenadas se envían al servicio público existente y se exige una vía a un máximo de 100 m de cada punto. No se inventan enlaces cuando la matriz devuelve `null`. Los tiempos de conducción son estimaciones del perfil de automóvil, sin tráfico en vivo ni estancias; no certifican accesibilidad de camiones por altura/peso. La optimización es respecto de la matriz consultada; el trazado final se consulta al servicio y puede variar. El planificador original mantiene su cálculo con penalización blanda de tramos repetidos.
+`mandatory-routing.js` extrae las fuentes y consulta OSRM Table/Route; `dijkstra-routing.js` mantiene el algoritmo puro. Dijkstra decide el orden de las paradas obligatorias y luego `route-optimizer.js` compara alternativas por cada tramo con una penalización blanda configurable (factor 5) para preferir calles no utilizadas. Si la única salida exige regresar por una calle, se acepta su costo penalizado y la ruta continúa. Las coordenadas se envían al servicio público existente y se exige una vía a un máximo de 100 m de cada punto. No se inventan enlaces cuando la matriz devuelve `null`. Los tiempos de conducción son estimaciones del perfil de automóvil, sin tráfico en vivo ni estancias; no certifican accesibilidad de camiones por altura/peso. Para proteger el servicio público, recorridos extraordinarios de más de 30 puntos conservan todas sus paradas en una sola consulta, sin el análisis de alternativas calle por calle.
+
+Al mostrar una ruta calculada o guardada, el mapa identifica sus extremos con las etiquetas `INICIO` y `FIN`. El cuadro minimizable `RECORRIDO`, ubicado junto a los paneles de Tramos y Velocidades, muestra ambos nombres y permite ocultar o volver a mostrar el trazado sin eliminarlo.
 
 Referencia: [OSRM Table y Route](https://project-osrm.org/docs/v5.24.0/api/). Pruebas: `node tests/dijkstra-routing.test.js` y `node tests/mandatory-routing.test.js`.
 
@@ -106,4 +108,3 @@ El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa l
 - Cada importación valida longitud entre −180 y 180, latitud entre −90 y 90, omite registros corruptos y presenta un reporte sin interrumpir los demás registros.
 
 Las librerías de Excel, Shapefile, KMZ y reproyección se cargan bajo demanda para no aumentar el peso inicial de la PWA.
-
