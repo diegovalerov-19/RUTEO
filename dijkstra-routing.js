@@ -204,63 +204,9 @@
     return { path, segments, total: finalState.cost, stopOrder };
   }
 
-  function formatNumber(value) {
-    return new Intl.NumberFormat("es-CO", { maximumFractionDigits: 3 }).format(value);
-  }
 
-  function initPanel() {
-    const form = global.document.querySelector("#dijkstra-form");
-    if (!form) return;
-    const status = global.document.querySelector("#dijkstra-status");
-    const resultBox = global.document.querySelector("#dijkstra-result");
-    const pathOutput = global.document.querySelector("#dijkstra-path");
-    const totalOutput = global.document.querySelector("#dijkstra-total");
-    const stopsOutput = global.document.querySelector("#dijkstra-stop-order");
-    const segmentList = global.document.querySelector("#dijkstra-segments");
-
-    const clearResult = () => {
-      resultBox.hidden = true;
-      status.className = "dijkstra-status";
-      status.textContent = "Datos modificados. Pulsa Calcular ruta óptima para actualizar el resultado.";
-    };
-    form.addEventListener("input", clearResult);
-    form.addEventListener("change", clearResult);
-
-    form.addEventListener("submit", event => {
-      event.preventDefault();
-      status.className = "dijkstra-status";
-      resultBox.hidden = true;
-      try {
-        const data = new FormData(form);
-        const result = solve({
-          edges: data.get("edges"),
-          start: data.get("start"),
-          end: data.get("end"),
-          requiredStops: data.get("required"),
-          directed: data.get("directed") === "on"
-        });
-        const unit = data.get("unit") === "min" ? "min" : "km";
-        pathOutput.textContent = result.path.join(" → ");
-        totalOutput.textContent = `${formatNumber(result.total)} ${unit}`;
-        stopsOutput.textContent = result.stopOrder.length ? result.stopOrder.join(" → ") : "Sin paradas obligatorias";
-        segmentList.replaceChildren(...result.segments.map(segment => {
-          const item = global.document.createElement("li");
-          item.textContent = `${segment.from} → ${segment.to}: ${formatNumber(segment.weight)} ${unit}`;
-          return item;
-        }));
-        status.textContent = "Ruta óptima calculada correctamente.";
-        status.classList.add("success");
-        resultBox.hidden = false;
-      } catch (error) {
-        status.textContent = error.message;
-        status.classList.add("error");
-      }
-    });
-  }
-
-  const api = { MAX_REQUIRED_STOPS, parseEdges, normalizeRequiredStops, solve, initPanel };
+  const api = { MAX_REQUIRED_STOPS, parseEdges, normalizeRequiredStops, solve };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.DijkstraRouting = api;
-  if (global.document) initPanel();
 })(typeof globalThis !== "undefined" ? globalThis : this);
 

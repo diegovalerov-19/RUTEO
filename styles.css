@@ -114,22 +114,29 @@ textarea:focus, select:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3
 .summary span { color: var(--gray-700); }
 .summary strong { color: var(--black); font-size: 1rem; }
 
-.dijkstra-planner { margin: 22px 0 4px; padding: 15px; border: 1px solid var(--gray-300); border-top: 4px solid var(--upc-red); border-radius: 11px; background: var(--white); box-shadow: 0 8px 22px #0000000d; }
-.dijkstra-heading span { color: var(--upc-red); font-size: .57rem; font-weight: 850; letter-spacing: .12em; }
-.dijkstra-heading h3 { margin: 3px 0 0; font-size: 1rem; }
-.dijkstra-planner > p { margin: 9px 0 13px; color: var(--gray-700); font-size: .7rem; line-height: 1.45; }
+.dijkstra-planner { margin: 22px 0 4px; min-width: 0; overflow: hidden; border: 1px solid var(--gray-300); border-top: 4px solid var(--upc-red); border-radius: 11px; background: var(--white); box-shadow: 0 8px 22px #0000000d; }
+.dijkstra-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 12px; color: var(--white); background: var(--black); cursor: pointer; list-style: none; }
+.dijkstra-heading::-webkit-details-marker { display: none; }
+.dijkstra-heading small { display: block; color: #ccc; font-size: .53rem; font-weight: 850; letter-spacing: .08em; }
+.dijkstra-heading strong { display: block; margin-top: 3px; font-size: .8rem; line-height: 1.3; }
+.dijkstra-point-count { font-size: .61rem; white-space: nowrap; }
+.dijkstra-chevron { transition: transform .18s ease; }
+.dijkstra-planner[open] > .dijkstra-heading .dijkstra-chevron { transform: rotate(180deg); }
+.dijkstra-body { padding: 14px; }
+.dijkstra-body > p:first-child { margin: 0 0 12px; color: var(--gray-700); font-size: .7rem; line-height: 1.45; }
+.dijkstra-planner select { display: block; width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--gray-300); border-radius: 8px; padding: 7px; color: var(--black); background: var(--white); font-size: .7rem; }
+.dijkstra-source-info { margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--gray-100); overflow-wrap: anywhere; }
+.dijkstra-source-info p { margin: 0 0 7px; }
+.dijkstra-source-info small, .dijkstra-source-info strong { display: block; }
+.dijkstra-source-info small { color: var(--gray-700); font-size: .59rem; }
+.dijkstra-source-info strong { font-size: .71rem; }
+.dijkstra-source-info ol { max-height: 145px; overflow-y: auto; margin: 5px 0 0; padding-left: 21px; font-size: .68rem; line-height: 1.5; }
 .dijkstra-planner label { margin-top: 11px; font-size: .72rem; }
-.dijkstra-planner textarea { display: block; width: 100%; min-height: 116px; resize: vertical; border: 1px solid var(--gray-300); border-radius: 9px; padding: 10px 12px; color: var(--black); background: var(--gray-100); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .72rem; line-height: 1.5; }
 .dijkstra-help { display: block; margin-top: 5px; color: var(--gray-700); font-size: .6rem; line-height: 1.4; }
-.dijkstra-help code { color: var(--upc-red-dark); }
-.dijkstra-points-grid, .dijkstra-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-.dijkstra-points-grid label, .dijkstra-options label { margin-bottom: 0; }
-.dijkstra-points-grid input, .dijkstra-options select { display: block; width: 100%; height: 42px; margin-top: 6px; border: 1px solid var(--gray-300); border-radius: 8px; padding: 0 10px; background: var(--white); }
-.dijkstra-options { align-items: end; margin-bottom: 12px; }
-.dijkstra-checkbox { display: flex !important; align-items: center; gap: 7px; min-height: 42px; margin-top: 11px !important; padding: 7px 9px; border-radius: 8px; background: var(--gray-100); font-size: .65rem !important; line-height: 1.25; }
-.dijkstra-checkbox input { flex: 0 0 auto; width: 17px; height: 17px; margin: 0; accent-color: var(--upc-red); }
-.dijkstra-planner .primary-button { min-height: 42px; font-size: .72rem; }
-.dijkstra-status { min-height: 0; margin: 10px 0 0 !important; font-weight: 700; }
+.dijkstra-planner .primary-button { min-height: 44px; margin: 12px 0 8px; font-size: .72rem; }
+.dijkstra-planner .primary-button:disabled { cursor: not-allowed; }
+.dijkstra-heading:focus-visible, #dijkstra-minimize:focus-visible { outline: 3px solid var(--upc-red); outline-offset: -3px; }
+.dijkstra-status { min-height: 0; margin: 10px 0 0 !important; font-size: .72rem; line-height: 1.5; font-weight: 700; }
 .dijkstra-status.success { color: #16743a; }
 .dijkstra-status.error { color: var(--upc-red-dark); }
 .dijkstra-result { display: grid; gap: 7px; margin-top: 11px; padding: 10px; border-left: 4px solid var(--upc-red); border-radius: 8px; color: var(--white); background: var(--black); }
