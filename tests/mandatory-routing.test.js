@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const DijkstraRouting = require("../dijkstra-routing.js");
+const RouteOptimizer = require("../route-optimizer.js");
 const MandatoryRouting = require("../mandatory-routing.js");
 const RouteImport = require("../route-import.js");
 const fs = require("node:fs");
@@ -9,6 +10,10 @@ assert.match(html, /<details id="dijkstra-panel" class="dijkstra-planner">/, "El
 assert.ok(html.indexOf('id="dijkstra-panel"') < html.indexOf('class="route-import"'));
 assert.ok(!html.includes('id="apply-imported-route"'));
 assert.ok(!html.includes('id="dijkstra-edges"'), "No exige volver a escribir conexiones ni paradas.");
+assert.match(html, /id="route-info-panel"[^>]*hidden/, "El cuadro Recorrido existe y comienza minimizado/oculto hasta mostrar una ruta.");
+assert.match(html, /id="route-info-start"/);
+assert.match(html, /id="route-info-end"/);
+assert.match(html, /id="toggle-displayed-route"/);
 assert.ok(!fs.readFileSync(path.join(__dirname, "../app.js"), "utf8").includes("applyImportedRouteButton"), "No quedan listeners de un botón eliminado.");
 
 const feature = (label, lng, lat, order) => ({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { label, order, role: "marked-point" } });
@@ -48,29 +53,35 @@ assert.throws(() => MandatoryRouting.orderFromMatrix([[0, -1], [1, 0]], 2, Dijks
 
 (async () => {
   const requested = [];
-  const fetchFn = async url => {
+  const fetchFn = async (url, requestOptions = {}) => {
     requested.push(url);
     if (url.includes("/table/")) return { ok: true, json: async () => ({ code: "Ok", durations: matrix }) };
     const coordinates = new URL(url).pathname.split("/driving/")[1].split(";").map(pair => pair.split(",").map(Number));
     return { ok: true, json: async () => ({ code: "Ok", routes: [{ distance: 1234, duration: 345,
       geometry: { type: "LineString", coordinates }, legs: coordinates.slice(1).map(() => ({ distance: 10, duration: 20 })) }], waypoints: coordinates.map(location => ({ location, distance: 1 })) }) };
   };
-  const result = await MandatoryRouting.calculate(imported, { fetchFn, dijkstra: DijkstraRouting });
+  const result = await MandatoryRouting.calculate(imported, { fetchFn, dijkstra: DijkstraRouting, routeOptimizer: RouteOptimizer });
   assert.deepEqual(result.orderedStops.map(p => p.label), [imported.start.label, "B", "A", imported.end.label]);
-  assert.equal(result.distanceMeters, 1234);
-  assert.equal(result.durationSeconds, 345);
+  assert.equal(result.distanceMeters, 1234 * 3);
+  assert.equal(result.durationSeconds, 345 * 3);
   assert.equal(result.legs.length, 3);
+  assert.equal(result.optimization.orderStrategy, "dijkstra-road-time");
+  assert.equal(result.optimization.repeatAvoidanceApplied, true);
+  assert.equal(result.optimization.penaltyFactor, 5);
+  assert.equal(requested.length, 4, "Consulta la matriz y luego alternativas por cada tramo ordenado.");
   assert.equal(new URL(requested[0]).searchParams.get("fallback_speed"), null, "No se inventan conexiones rectas para huecos en la red.");
   assert.equal(new URL(requested[1]).searchParams.get("continue_straight"), "false", "Se permite regresar desde callejones sin salida.");
+  assert.equal(new URL(requested[1]).searchParams.get("alternatives"), "3", "Se comparan alternativas para reducir calles repetidas.");
 
   const large = { ...imported, required: Array.from({ length: 27 }, (_, i) => ({ lat: 4.6 + i / 10000, lng: -74.1, label: `Fijo ${i + 1}` })) };
   await assert.rejects(MandatoryRouting.calculate(large, { fetchFn, dijkstra: DijkstraRouting }), /Conservar el orden actual/);
   requested.length = 0;
-  const preserved = await MandatoryRouting.calculate(large, { fetchFn, orderMode: "preserve" });
+  const preserved = await MandatoryRouting.calculate(large, { fetchFn, orderMode: "preserve", routeOptimizer: RouteOptimizer });
   assert.equal(preserved.orderedStops.length, 29);
   assert.deepEqual(preserved.orderedStops.slice(1, -1), large.required);
-  assert.equal(requested.length, 1, "Conservar el orden no solicita matriz ni omite puntos.");
-  assert.equal(preserved.optimization.strategy, "preserved-stop-order");
+  assert.equal(requested.length, 28, "Conservar el orden no solicita matriz y evalúa cada uno de sus 28 tramos sin omitir puntos.");
+  assert.equal(preserved.optimization.strategy, "preserved-stop-order-soft-edge-penalty");
+  assert.equal(preserved.optimization.repeatAvoidanceApplied, true);
 
   const controller = new AbortController();
   controller.abort();
@@ -85,4 +96,3 @@ assert.throws(() => MandatoryRouting.orderFromMatrix([[0, -1], [1, 0]], 2, Dijks
   assert.equal(csvContext.required[0].label, "Parada real");
   console.log("mandatory-routing: fuentes, CSV marcado, orden Dijkstra, 27 paradas sin pérdidas, errores y cancelación aprobados");
 })().catch(error => { console.error(error); process.exitCode = 1; });
-
