@@ -29,7 +29,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - La velocidad actual se muestra durante la grabación y las lecturas atípicas se filtran antes de almacenarlas para evitar picos irreales.
 - La simulación reproduce el recorrido en tiempo real al seleccionar 1×, sin límite de 90 segundos; también ofrece 2×, 4× y 10× para acelerar recorridos largos.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
-- Panel independiente de **Dijkstra** encima del cargador de rutas: permite escribir una red ponderada, elegir origen y destino, optimizar el orden de hasta 12 paradas obligatorias y obtener el camino exacto, el costo total y el cálculo por tramos. Admite costos en kilómetros o minutos y redes bidireccionales o de un solo sentido.
+- Recuadro desplegable de **Dijkstra**, minimizado por defecto encima del cargador: toma automáticamente los puntos fijos del archivo cargado o los puntos obligatorios del planificador. Calcula el orden por tiempo vial para hasta 12 paradas y muestra/guarda la nueva ruta con distancia, duración y detalle de cada tramo.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
 - Mapa oficial de Google Maps mediante una API key configurada en el dispositivo, con OpenStreetMap como respaldo.
@@ -80,17 +80,23 @@ Las rutas planificadas creadas antes de esta actualización no contienen su geom
 
 ### Cálculo de red con Dijkstra
 
-Encima del cargador aparece un recuadro independiente para una red con costos conocidos. Escribe una conexión por línea como `A; B; 5`, elige kilómetros o minutos (todos los valores deben usar la misma unidad), indica el origen, el destino y las paradas obligatorias separadas por comas. Las conexiones son bidireccionales por defecto; activa **Conexiones de un solo sentido** si corresponde. No se convierten automáticamente kilómetros a minutos.
+El recuadro **Calcular la mejor ruta en una red** empieza cerrado. Pulsa su encabezado para desplegarlo y vuelve a pulsarlo, o usa **Minimizar recuadro**, para ocultar su contenido. Se retiró el botón **Usar en el planificador** del cargador: ya no hace falta transferir los puntos manualmente.
 
-El módulo `dijkstra-routing.js` aplica Dijkstra a estados `(nodo, conjunto de paradas visitadas)`, con una cola de prioridad mínima. Así considera todos los órdenes posibles de visita, cuenta las paradas atravesadas durante el camino y permite regresar por un callejón sin salida. El ejemplo incluido devuelve **A → C → B → D**, con **2 + 1 + 4 = 7 km**. La ruta es óptima para los costos no negativos de la red ingresada, no para calles o conexiones que no se hayan aportado.
+- **Automático:** prioriza el archivo cargado; permite elegir explícitamente el archivo o el planificador.
+- **Archivo con trazado y puntos fijos:** conserva los extremos de la línea como origen/destino y usa todos los puntos fijos como paradas. Nunca toma muestras de vértices GPS como si fueran paradas.
+- **Archivo solo de puntos:** primero y último según su orden son origen/destino; todos los intermedios son obligatorios.
+- **Planificador:** usa sus extremos y todos los puntos obligatorios ya ubicados. Un punto incompleto bloquea el cálculo hasta corregirlo.
+- **Optimizar por tiempo:** consulta la matriz dirigida de tiempos de OSRM y aplica Dijkstra a estados `(punto, conjunto de paradas visitadas)` para escoger un orden de visita de menor costo en esa matriz, hasta 12 paradas. Los sentidos de circulación provienen del servicio vial, no de líneas rectas entre coordenadas.
+- **Conservar el orden actual:** permite hasta 100 puntos contando origen/destino, sin eliminar, muestrear ni reordenar paradas; este modo no se presenta como una optimización del orden.
+- Al calcular se dibuja y guarda una ruta nueva, disponible para simular y exportar desde el historial; no se modifica el archivo original. Cambiar puntos o fuente cancela una consulta pendiente y descarta resultados obsoletos.
 
-Para limitar memoria en teléfonos, se admiten hasta 12 paradas, 5.000 conexiones y 200.000 estados posibles. Si se supera el límite, se pide reducir la red sin presentar una aproximación como resultado exacto. El cálculo funciona localmente, no llama a servicios externos, no modifica el planificador vial OSRM y no dibuja geometrías porque los nombres de la red no contienen coordenadas.
+`mandatory-routing.js` extrae las fuentes y consulta OSRM Table/Route; `dijkstra-routing.js` mantiene el algoritmo puro. Las coordenadas se envían al servicio público existente y se exige una vía a un máximo de 100 m de cada punto. No se inventan enlaces cuando la matriz devuelve `null`. Los tiempos de conducción son estimaciones del perfil de automóvil, sin tráfico en vivo ni estancias; no certifican accesibilidad de camiones por altura/peso. La optimización es respecto de la matriz consultada; el trazado final se consulta al servicio y puede variar. El planificador original mantiene su cálculo con penalización blanda de tramos repetidos.
 
-Pruebas: `node tests/dijkstra-routing.test.js`.
+Referencia: [OSRM Table y Route](https://project-osrm.org/docs/v5.24.0/api/). Pruebas: `node tests/dijkstra-routing.test.js` y `node tests/mandatory-routing.test.js`.
 
 ### Archivos geográficos
 
-El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa los archivos en el navegador y produce una colección GeoJSON en WGS 84. Los puntos importados se aplican como origen, paradas obligatorias ordenadas y destino. Las líneas con muchos vértices se resumen en hasta diez controles distribuidos sobre el trazado antes de calcular la ruta vial.
+El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa los archivos en el navegador y produce una colección GeoJSON en WGS 84. El recuadro de Dijkstra detecta sus puntos fijos sin transferirlos ni resumir el trazado. El cargador conserva la simulación del recorrido original y el análisis de densidad.
 
 - CSV se analiza sin dependencias externas y Excel utiliza SheetJS 0.20.3.
 - Los Shapefile ZIP se leen con shpjs 6.2.0, incluyendo la reproyección declarada en el archivo PRJ.
