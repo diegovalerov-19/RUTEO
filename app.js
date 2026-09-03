@@ -81,18 +81,20 @@ const routeImportCrs = $("#route-import-crs");
 const routeImportStatus = $("#route-import-status");
 const routeImportMapping = $("#route-import-mapping");
 const routeImportReport = $("#route-import-report");
-const applyImportedRouteButton = $("#apply-imported-route");
 const simulateImportedRouteButton = $("#simulate-imported-route");
 let waypointSequence = 0;
 let importedTable = null;
 let importedTableFormat = "";
 let importedGeoJSON = null;
+let mandatoryRoutingController = null;
+let mandatoryRoutingSignature = "";
 
 const now = new Date();
 dateInput.value = now.toISOString().slice(0, 10);
 timeInput.value = now.toTimeString().slice(0, 5);
 
 function setMode(mode) {
+  if (mode !== "plan") mandatoryRoutingController?.abort();
   if (state.track?.status === "recording" && mode !== "capture") {
     showMapBanner("Finaliza o pausa el recorrido antes de cambiar de modo.", "warning");
     return;
@@ -924,7 +926,13 @@ function renderWaypointRows() {
 
   document.querySelectorAll("[data-waypoint-input]").forEach(input => input.addEventListener("input", event => {
     const waypoint = getWaypoint(event.currentTarget.dataset.waypointInput);
-    if (waypoint) waypoint.label = event.currentTarget.value;
+    if (waypoint) {
+      waypoint.label = event.currentTarget.value;
+      waypoint.point = null;
+      refreshWaypointMarkers();
+      clearDensityAnalysis();
+      syncMandatoryRouting();
+    }
   }));
   document.querySelectorAll("[data-search-waypoint]").forEach(button => button.addEventListener("click", () => searchPlace("waypoint", button.dataset.searchWaypoint)));
   document.querySelectorAll("[data-map-waypoint]").forEach(button => button.addEventListener("click", () => selectWaypointOnMap(button.dataset.mapWaypoint)));
@@ -939,6 +947,7 @@ function renderWaypointRows() {
     if (waypoint) waypoint.dwellMinutes = Math.max(0, Number(event.currentTarget.value) || 0);
     clearDensityAnalysis();
   }));
+  syncMandatoryRouting();
 }
 
 function selectWaypointOnMap(id) {
@@ -1036,6 +1045,7 @@ function setPoint(type, latlng, label) {
     title: isStart ? "Punto de partida" : "Punto final"
   });
   (isStart ? startInput : endInput).value = label;
+  syncMandatoryRouting();
 }
 
 map.on("click", latlng => {
@@ -1221,6 +1231,7 @@ function resetPlannedPoints() {
   $("#duration").textContent = "—";
   hideRouteSegments();
   setMessage("");
+  syncMandatoryRouting();
 }
 
 function setImportStatus(text, type = "") {
@@ -1340,13 +1351,13 @@ function renderImportReport(report) {
 
 function acceptImportedGeoJSON(geojson, report) {
   importedGeoJSON = geojson;
+  syncMandatoryRouting();
   state.importedRouteVisible = true;
   state.fixedPointsVisible = true;
   renderImportReport(report);
   renderImportedGeoJSON(geojson);
   updateImportedRouteLayerButton();
   updateFixedPointsLayerButton();
-  applyImportedRouteButton.disabled = !(geojson.features || []).length;
   simulateImportedRouteButton.disabled = !window.RouteImport.simulationRoute(geojson);
   const traceSummary = report.tracePoints
     ? ` Trazado: 1 línea con ${report.tracePoints} coordenadas; puntos marcados: ${report.markedPoints || 0}; velocidades originales: ${report.speedSamples || 0}.`
@@ -1399,7 +1410,7 @@ async function processSelectedRouteFile() {
   importedTable = null;
   importedTableFormat = "";
   importedGeoJSON = null;
-  applyImportedRouteButton.disabled = true;
+  syncMandatoryRouting();
   simulateImportedRouteButton.disabled = true;
   routeImportMapping.hidden = true;
   routeImportReport.hidden = true;
@@ -1450,34 +1461,6 @@ async function processImportedColumns() {
   }
 }
 
-function applyImportedRoute() {
-  if (!importedGeoJSON) return;
-  try {
-    const importedPlan = window.RouteImport.routingStops(importedGeoJSON, { maxStops: 10 });
-    resetPlannedPoints();
-    const stops = importedPlan.stops;
-    setPoint("start", stops[0], stops[0].label);
-    setPoint("end", stops.at(-1), stops.at(-1).label);
-    state.waypoints = stops.slice(1, -1).map(stop => ({
-      id: String(++waypointSequence),
-      point: { lat: stop.lat, lng: stop.lng },
-      label: stop.label,
-      frequency: 1,
-      dwellMinutes: 0,
-      marker: null
-    }));
-    renderWaypointRows();
-    refreshWaypointMarkers();
-    renderImportedGeoJSON(importedGeoJSON, false);
-    map.fit(stops, 35);
-    const samplingMessage = importedPlan.sampled ? " La geometría se resumió en 10 controles distribuidos sobre el trazado." : "";
-    setMessage(`Ruta importada: origen, ${Math.max(0, stops.length - 2)} puntos obligatorios y destino.${samplingMessage} Pulsa “Calcular y guardar ruta”.`);
-    if (window.DensityAnalysis.stopsFromGeoJSON(importedGeoJSON).length) runDensityAnalysis("imported");
-    startInput.scrollIntoView({ behavior: "smooth", block: "center" });
-  } catch (error) {
-    setImportStatus(error?.message || "El archivo no contiene suficientes puntos para el planificador.", "error");
-  }
-}
 
 function clearRouteImport() {
   routeImportFile.value = "";
@@ -1485,9 +1468,9 @@ function clearRouteImport() {
   importedTable = null;
   importedTableFormat = "";
   importedGeoJSON = null;
+  syncMandatoryRouting();
   routeImportMapping.hidden = true;
   routeImportReport.hidden = true;
-  applyImportedRouteButton.disabled = true;
   simulateImportedRouteButton.disabled = true;
   clearImportedLayers();
   state.importedRouteVisible = true;
@@ -1496,6 +1479,123 @@ function clearRouteImport() {
   clearDensityAnalysis();
   updateDensitySourceAvailability();
   setImportStatus("Selecciona un archivo para comenzar.");
+}
+
+function mandatoryRoutingContext() {
+  const source = $("#dijkstra-source").value;
+  const usePlanner = source === "planned" || (source === "auto" && !importedGeoJSON);
+  if (usePlanner && ((state.start && startInput.value.trim() !== state.start.label)
+    || (state.end && endInput.value.trim() !== state.end.label))) {
+    throw new Error("Confirma el origen y el destino con la búsqueda, coordenadas o el mapa antes de calcular.");
+  }
+  return window.MandatoryRouting.context({ source, importedGeoJSON, planned: state });
+}
+
+function syncMandatoryRouting() {
+  let context, errorMessage = "";
+  try { context = mandatoryRoutingContext(); } catch (error) { errorMessage = error.message; }
+  const mode = $("#dijkstra-order-mode").value;
+  const signature = JSON.stringify({ context, errorMessage, mode });
+  if (signature !== mandatoryRoutingSignature) {
+    mandatoryRoutingSignature = signature;
+    mandatoryRoutingController?.abort();
+    $("#dijkstra-result").hidden = true;
+    $("#dijkstra-status").className = "dijkstra-status";
+    $("#dijkstra-status").textContent = "Puntos actualizados. Pulsa calcular para generar la ruta.";
+  }
+  const pointCount = context?.required.length || 0;
+  $("#dijkstra-point-count").textContent = `${pointCount} ${pointCount === 1 ? "parada" : "paradas"}`;
+  $("#dijkstra-source-start").textContent = context?.start.label || "—";
+  $("#dijkstra-source-end").textContent = context?.end.label || "—";
+  $("#dijkstra-source-points").replaceChildren(...(context?.required || []).map(stop => {
+    const item = document.createElement("li");
+    const coordinates = `${stop.lat.toFixed(6)}, ${stop.lng.toFixed(6)}`;
+    item.textContent = stop.label === coordinates ? coordinates : `${stop.label} (${coordinates})`;
+    return item;
+  }));
+  $("#dijkstra-source-note").textContent = !context ? ""
+    : context.endpointSource === "trace" ? "Origen y destino: extremos del recorrido cargado. Solo los puntos fijos se usan como paradas; no se muestrea el trazado."
+    : context.endpointSource === "first-last-points" ? "Archivo sin línea: el primer y el último punto son origen y destino. Todos los puntos intermedios son obligatorios."
+    : "Se utilizan el origen, el destino y todos los puntos obligatorios del planificador.";
+  if (context) {
+    try { window.MandatoryRouting.validateContext(context, mode); } catch (error) { errorMessage = error.message; }
+  }
+  $("#dijkstra-calculate").disabled = Boolean(errorMessage || mandatoryRoutingController);
+  if (errorMessage) {
+    $("#dijkstra-status").textContent = errorMessage;
+    $("#dijkstra-status").className = "dijkstra-status";
+  }
+  return errorMessage ? null : context;
+}
+
+async function calculateMandatoryRoute(event) {
+  event.preventDefault();
+  const context = syncMandatoryRouting();
+  if (!context || mandatoryRoutingController) return;
+  if (calculateButton.disabled || state.track?.status === "recording") {
+    $("#dijkstra-status").textContent = "Finaliza el cálculo o la grabación activa antes de generar otra ruta.";
+    return;
+  }
+  if (!dateInput.value || !timeInput.value) {
+    $("#dijkstra-status").textContent = "Completa el día y la hora del ruteo en el planificador antes de guardar.";
+    return;
+  }
+  const controller = new AbortController();
+  mandatoryRoutingController = controller;
+  const signature = mandatoryRoutingSignature;
+  $("#dijkstra-calculate").disabled = true;
+  calculateButton.disabled = true;
+  $("#dijkstra-result").hidden = true;
+  $("#dijkstra-status").className = "dijkstra-status";
+  $("#dijkstra-status").textContent = "Consultando las calles entre todos los puntos obligatorios…";
+  try {
+    const route = await window.MandatoryRouting.calculate(context, {
+      orderMode: $("#dijkstra-order-mode").value, signal: controller.signal
+    });
+    if (controller.signal.aborted || signature !== mandatoryRoutingSignature) return;
+    const plannedRoute = {
+      id: Date.now(), type: "planned", start: route.orderedStops[0].label, end: route.orderedStops.at(-1).label,
+      date: dateInput.value, time: timeInput.value,
+      distanceKm: route.distanceMeters / 1000, distanceMeters: route.distanceMeters,
+      durationMin: Math.round(route.durationSeconds / 60), durationMilliseconds: route.durationSeconds * 1000,
+      waypoints: route.orderedStops.slice(1, -1), segments: route.legs, optimization: route.optimization, points: route.points
+    };
+    saveRoute(plannedRoute);
+    closeSimulation();
+    setMode("plan");
+    if (state.plannedLine) map.remove(state.plannedLine);
+    state.plannedLine = null;
+    clearSpeedGradient();
+    showRouteSegments(route.legs);
+    showSpeedPanelForRoute(plannedRoute);
+    map.fit(route.points, 35);
+    $("#distance").textContent = formatDistance(route.distanceMeters);
+    $("#duration").textContent = formatSegmentDuration(route.durationSeconds);
+    $("#dijkstra-path").textContent = route.orderedStops.map(stop => stop.label).join(" → ");
+    $("#dijkstra-distance").textContent = formatDistance(route.distanceMeters);
+    $("#dijkstra-total").textContent = formatSegmentDuration(route.durationSeconds);
+    $("#dijkstra-stop-order").textContent = route.orderedStops.slice(1, -1).map(stop => stop.label).join(" → ") || "Sin paradas intermedias";
+    $("#dijkstra-segments").replaceChildren(...route.legs.map(leg => {
+      const item = document.createElement("li");
+      item.textContent = `${leg.from} → ${leg.to}: ${formatDistance(leg.distanceMeters)} · ${formatSegmentDuration(leg.durationSeconds)}`;
+      return item;
+    }));
+    $("#dijkstra-result").hidden = false;
+    $("#dijkstra-status").className = "dijkstra-status success";
+    const orderMessage = route.optimization.strategy === "dijkstra-road-time"
+      ? "Orden optimizado según los tiempos viales consultados."
+      : "Orden original conservado; no se optimizó el orden de visita.";
+    $("#dijkstra-status").textContent = `${orderMessage} Ruta mostrada en el mapa y guardada con todas las paradas.${route.maxSnapMeters > 30 ? ` Ajuste máximo a una vía: ${Math.round(route.maxSnapMeters)} m.` : ""}`;
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      $("#dijkstra-status").className = "dijkstra-status error";
+      $("#dijkstra-status").textContent = error.message || "No se pudo calcular la ruta. Revisa la conexión.";
+    }
+  } finally {
+    if (mandatoryRoutingController === controller) mandatoryRoutingController = null;
+    calculateButton.disabled = false;
+    syncMandatoryRouting();
+  }
 }
 
 function clearDensityLayers() {
@@ -1658,7 +1758,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=36" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=37" alt="" aria-hidden="true">
     </div>`
   };
 }
@@ -2169,6 +2269,16 @@ function formatDateTime(value) { return new Date(value).toLocaleString("es-CO", 
 function escapeHtml(value = "") { return value.replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]); }
 
 $("#add-waypoint").addEventListener("click", () => addWaypoint());
+$("#dijkstra-form").addEventListener("submit", calculateMandatoryRoute);
+$("#dijkstra-source").addEventListener("change", syncMandatoryRouting);
+$("#dijkstra-order-mode").addEventListener("change", syncMandatoryRouting);
+$("#dijkstra-panel").addEventListener("toggle", syncMandatoryRouting);
+$("#dijkstra-minimize").addEventListener("click", () => {
+  $("#dijkstra-panel").open = false;
+  $("#dijkstra-panel > summary").focus({ preventScroll: true });
+});
+startInput.addEventListener("input", syncMandatoryRouting);
+endInput.addEventListener("input", syncMandatoryRouting);
 $("#reset").addEventListener("click", resetPlannedPoints);
 $("#route-import-toggle").addEventListener("click", event => {
   const panel = $("#route-import-panel");
@@ -2182,7 +2292,6 @@ routeImportCrs.addEventListener("change", () => {
   if (routeImportFile.files?.[0] && !importedTable) processSelectedRouteFile();
 });
 $("#process-import-columns").addEventListener("click", processImportedColumns);
-applyImportedRouteButton.addEventListener("click", applyImportedRoute);
 simulateImportedRouteButton.addEventListener("click", startImportedRouteSimulation);
 $("#clear-route-import").addEventListener("click", clearRouteImport);
 $("#run-density-analysis").addEventListener("click", runDensityAnalysis);
@@ -2238,6 +2347,7 @@ $("#simulation-progress").addEventListener("input", event => {
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 restoreActiveTrack();
 renderHistory();
+syncMandatoryRouting();
 }
 
 initApp().catch(error => {
