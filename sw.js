@@ -1,5 +1,5 @@
-const CACHE_NAME = "ruteo-shell-v35";
-const APP_SHELL = ["./", "index.html", "styles.css?v=35", "map-engine.js?v=35", "route-export.js?v=35", "gps-speed.js?v=35", "route-import.js?v=35", "density-analysis.js?v=35", "route-optimizer.js?v=35", "app.js?v=35", "manifest.webmanifest", "icon.svg", "logo-upc.jpg?v=35", "garbage-truck-marker.png?v=35"];
+const CACHE_NAME = "ruteo-shell-v36";
+const APP_SHELL = ["./", "index.html", "styles.css?v=36", "map-engine.js?v=36", "route-export.js?v=36", "gps-speed.js?v=36", "route-import.js?v=36", "density-analysis.js?v=36", "route-optimizer.js?v=36", "dijkstra-routing.js?v=36", "app.js?v=36", "manifest.webmanifest", "icon.svg", "logo-upc.jpg?v=36", "garbage-truck-marker.png?v=36"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
