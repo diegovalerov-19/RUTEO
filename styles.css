@@ -16,7 +16,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: var(--gray-100); }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 
@@ -40,6 +40,7 @@ label { display: block; margin: 16px 0 7px; font-size: .82rem; font-weight: 780;
 label span { color: var(--gray-500); font-size: .72rem; font-weight: 500; }
 input { width: 100%; height: 46px; border: 1px solid var(--gray-300); border-radius: 9px; padding: 0 12px; color: var(--black); background: var(--white); outline: none; }
 input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
+textarea:focus, select:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; outline: none; }
 .input-row { display: flex; gap: 7px; }
 .icon-button { width: 48px; flex: 0 0 48px; border: 0; border-radius: 9px; color: var(--white); background: var(--black); font-size: 1.5rem; }
 .icon-button:hover { background: var(--upc-red); }
@@ -112,6 +113,33 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
 .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0; padding: 15px; border: 1px solid #e3061340; border-radius: 10px; background: #fff4f4; }
 .summary span { color: var(--gray-700); }
 .summary strong { color: var(--black); font-size: 1rem; }
+
+.dijkstra-planner { margin: 22px 0 4px; padding: 15px; border: 1px solid var(--gray-300); border-top: 4px solid var(--upc-red); border-radius: 11px; background: var(--white); box-shadow: 0 8px 22px #0000000d; }
+.dijkstra-heading span { color: var(--upc-red); font-size: .57rem; font-weight: 850; letter-spacing: .12em; }
+.dijkstra-heading h3 { margin: 3px 0 0; font-size: 1rem; }
+.dijkstra-planner > p { margin: 9px 0 13px; color: var(--gray-700); font-size: .7rem; line-height: 1.45; }
+.dijkstra-planner label { margin-top: 11px; font-size: .72rem; }
+.dijkstra-planner textarea { display: block; width: 100%; min-height: 116px; resize: vertical; border: 1px solid var(--gray-300); border-radius: 9px; padding: 10px 12px; color: var(--black); background: var(--gray-100); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .72rem; line-height: 1.5; }
+.dijkstra-help { display: block; margin-top: 5px; color: var(--gray-700); font-size: .6rem; line-height: 1.4; }
+.dijkstra-help code { color: var(--upc-red-dark); }
+.dijkstra-points-grid, .dijkstra-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.dijkstra-points-grid label, .dijkstra-options label { margin-bottom: 0; }
+.dijkstra-points-grid input, .dijkstra-options select { display: block; width: 100%; height: 42px; margin-top: 6px; border: 1px solid var(--gray-300); border-radius: 8px; padding: 0 10px; background: var(--white); }
+.dijkstra-options { align-items: end; margin-bottom: 12px; }
+.dijkstra-checkbox { display: flex !important; align-items: center; gap: 7px; min-height: 42px; margin-top: 11px !important; padding: 7px 9px; border-radius: 8px; background: var(--gray-100); font-size: .65rem !important; line-height: 1.25; }
+.dijkstra-checkbox input { flex: 0 0 auto; width: 17px; height: 17px; margin: 0; accent-color: var(--upc-red); }
+.dijkstra-planner .primary-button { min-height: 42px; font-size: .72rem; }
+.dijkstra-status { min-height: 0; margin: 10px 0 0 !important; font-weight: 700; }
+.dijkstra-status.success { color: #16743a; }
+.dijkstra-status.error { color: var(--upc-red-dark); }
+.dijkstra-result { display: grid; gap: 7px; margin-top: 11px; padding: 10px; border-left: 4px solid var(--upc-red); border-radius: 8px; color: var(--white); background: var(--black); }
+.dijkstra-result > div { padding: 6px 7px; border-radius: 6px; background: #ffffff0d; }
+.dijkstra-result small, .dijkstra-result strong { display: block; }
+.dijkstra-result small { color: #cfcfcf; font-size: .55rem; }
+.dijkstra-result strong { margin-top: 3px; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
+.dijkstra-result details { font-size: .65rem; }
+.dijkstra-result summary { padding: 5px 2px; color: #e8e8e8; font-weight: 750; cursor: pointer; }
+.dijkstra-result ol { margin: 5px 0 0; padding-left: 23px; color: #d8d8d8; line-height: 1.55; }
 
 .route-import { margin: 22px 0 4px; border: 1px solid var(--gray-300); border-top: 4px solid var(--upc-red); border-radius: 11px; background: var(--white); box-shadow: 0 8px 22px #0000000d; }
 .route-import-trigger { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 9px; width: 100%; min-height: 58px; border: 0; padding: 10px 12px; color: var(--white); background: var(--black); text-align: left; }
@@ -324,7 +352,7 @@ input:focus { border-color: var(--upc-red); box-shadow: 0 0 0 3px #e3061320; }
   .icon-button { width: 40px; flex-basis: 40px; }
   .input-row input { min-width: 0; padding-inline: 9px; }
   .coordinate-help { font-size: .57rem; }
-  .import-mapping-grid, .import-actions { grid-template-columns: 1fr; }
+  .import-mapping-grid, .import-actions, .dijkstra-points-grid, .dijkstra-options { grid-template-columns: 1fr; }
   .map-settings-actions { grid-template-columns: 1fr; }
   .export-options { right: 0; left: auto; }
 }

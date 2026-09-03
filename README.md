@@ -29,6 +29,7 @@ Aplicación web progresiva para grabar recorridos con el GPS del celular y plani
 - La velocidad actual se muestra durante la grabación y las lecturas atípicas se filtran antes de almacenarlas para evitar picos irreales.
 - La simulación reproduce el recorrido en tiempo real al seleccionar 1×, sin límite de 90 segundos; también ofrece 2×, 4× y 10× para acelerar recorridos largos.
 - Simulación animada de rutas planificadas usando toda la geometría calculada.
+- Panel independiente de **Dijkstra** encima del cargador de rutas: permite escribir una red ponderada, elegir origen y destino, optimizar el orden de hasta 12 paradas obligatorias y obtener el camino exacto, el costo total y el cálculo por tramos. Admite costos en kilómetros o minutos y redes bidireccionales o de un solo sentido.
 - Selección de origen y destino mediante búsqueda o clic sobre el mapa.
 - Cálculo de distancia, duración y trazado de la ruta.
 - Mapa oficial de Google Maps mediante una API key configurada en el dispositivo, con OpenStreetMap como respaldo.
@@ -76,6 +77,18 @@ Cada recorrido con al menos dos coordenadas ofrece tres descargas:
 Las rutas planificadas creadas antes de esta actualización no contienen su geometría completa. Deben calcularse nuevamente para poder simularlas o descargarlas.
 
 ## Importación de rutas
+
+### Cálculo de red con Dijkstra
+
+Encima del cargador aparece un recuadro independiente para una red con costos conocidos. Escribe una conexión por línea como `A; B; 5`, elige kilómetros o minutos (todos los valores deben usar la misma unidad), indica el origen, el destino y las paradas obligatorias separadas por comas. Las conexiones son bidireccionales por defecto; activa **Conexiones de un solo sentido** si corresponde. No se convierten automáticamente kilómetros a minutos.
+
+El módulo `dijkstra-routing.js` aplica Dijkstra a estados `(nodo, conjunto de paradas visitadas)`, con una cola de prioridad mínima. Así considera todos los órdenes posibles de visita, cuenta las paradas atravesadas durante el camino y permite regresar por un callejón sin salida. El ejemplo incluido devuelve **A → C → B → D**, con **2 + 1 + 4 = 7 km**. La ruta es óptima para los costos no negativos de la red ingresada, no para calles o conexiones que no se hayan aportado.
+
+Para limitar memoria en teléfonos, se admiten hasta 12 paradas, 5.000 conexiones y 200.000 estados posibles. Si se supera el límite, se pide reducir la red sin presentar una aproximación como resultado exacto. El cálculo funciona localmente, no llama a servicios externos, no modifica el planificador vial OSRM y no dibuja geometrías porque los nombres de la red no contienen coordenadas.
+
+Pruebas: `node tests/dijkstra-routing.test.js`.
+
+### Archivos geográficos
 
 El botón **Cargue aquí su ruta**, ubicado al final del planificador, procesa los archivos en el navegador y produce una colección GeoJSON en WGS 84. Los puntos importados se aplican como origen, paradas obligatorias ordenadas y destino. Las líneas con muchos vértices se resumen en hasta diez controles distribuidos sobre el trazado antes de calcular la ruta vial.
 

@@ -1658,7 +1658,7 @@ function vehicleMarkerOptions() {
     size: 36,
     zIndex: 1000,
     html: `<div class="vehicle-marker" aria-label="Camión de basuras de la simulación">
-      <img src="garbage-truck-marker.png?v=35" alt="" aria-hidden="true">
+      <img src="garbage-truck-marker.png?v=36" alt="" aria-hidden="true">
     </div>`
   };
 }

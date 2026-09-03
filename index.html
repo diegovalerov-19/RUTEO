@@ -10,7 +10,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=35">
+  <link rel="stylesheet" href="styles.css?v=36">
 </head>
 <body>
   <main class="app-shell">
@@ -121,6 +121,44 @@
           <div><span>Duración estimada</span><strong id="duration">—</strong></div>
         </section>
 
+        <section class="dijkstra-planner" aria-labelledby="dijkstra-title">
+          <div class="dijkstra-heading">
+            <span>ALGORITMO DE DIJKSTRA</span>
+            <h3 id="dijkstra-title">Calcular la mejor ruta en una red</h3>
+          </div>
+          <p>Escribe las conexiones del mapa. El sistema encontrará el camino de menor costo y ordenará automáticamente las paradas obligatorias.</p>
+          <form id="dijkstra-form">
+            <label for="dijkstra-edges">Conexiones: origen; destino; distancia o tiempo</label>
+            <textarea id="dijkstra-edges" name="edges" rows="5" maxlength="500000" spellcheck="false" required aria-describedby="dijkstra-network-help">A; B; 5
+A; C; 2
+C; B; 1
+B; D; 4</textarea>
+            <small id="dijkstra-network-help" class="dijkstra-help">Una conexión por línea; costos numéricos en la misma unidad, sin valores negativos. Ejemplo: <code>A; B; 5,5</code>. Por defecto se permite circular en ambos sentidos.</small>
+
+            <div class="dijkstra-points-grid">
+              <label for="dijkstra-start">Origen<input id="dijkstra-start" name="start" value="A" required></label>
+              <label for="dijkstra-end">Destino final<input id="dijkstra-end" name="end" value="D" required></label>
+            </div>
+            <label for="dijkstra-required">Paradas obligatorias</label>
+            <input id="dijkstra-required" name="required" value="B" placeholder="Ej. B, C, E">
+            <small class="dijkstra-help">Hasta 12 paradas separadas con comas, con los mismos nombres de la red. Se optimiza el orden y se permiten regresos cuando hacen falta.</small>
+
+            <div class="dijkstra-options">
+              <label for="dijkstra-unit">Unidad<select id="dijkstra-unit" name="unit"><option value="km">Kilómetros</option><option value="min">Minutos</option></select></label>
+              <label class="dijkstra-checkbox"><input name="directed" type="checkbox"> Conexiones de un solo sentido</label>
+            </div>
+            <button class="primary-button" type="submit">Calcular ruta óptima</button>
+          </form>
+          <small class="dijkstra-help">Este recuadro analiza únicamente las conexiones escritas. No modifica ni dibuja la ruta geográfica del mapa.</small>
+          <p id="dijkstra-status" class="dijkstra-status" role="status" aria-live="polite"></p>
+          <section id="dijkstra-result" class="dijkstra-result" hidden aria-label="Resultado de la ruta óptima">
+            <div><small>Camino recomendado</small><strong id="dijkstra-path">—</strong></div>
+            <div><small>Costo total estimado</small><strong id="dijkstra-total">—</strong></div>
+            <div><small>Orden de paradas</small><strong id="dijkstra-stop-order">—</strong></div>
+            <details><summary>Ver cálculo por tramos</summary><ol id="dijkstra-segments"></ol></details>
+          </section>
+        </section>
+
         <section class="route-import" aria-labelledby="route-import-title">
           <button id="route-import-toggle" class="route-import-trigger" type="button" aria-controls="route-import-panel" aria-expanded="false">
             <span aria-hidden="true">⇧</span>
@@ -214,7 +252,7 @@
     <section class="map-shell">
       <div id="map" aria-label="Mapa del recorrido"></div>
       <div class="map-brand">
-        <img src="logo-upc.jpg?v=35" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
+        <img src="logo-upc.jpg?v=36" width="835" height="247" alt="Universidad Piloto de Colombia, acreditación institucional en alta calidad">
       </div>
       <button id="map-provider-button" class="map-provider-button" type="button">Activar Google Maps</button>
       <div id="map-banner" class="map-banner" hidden></div>
@@ -336,13 +374,14 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-engine.js?v=35"></script>
-  <script src="route-export.js?v=35"></script>
-  <script src="gps-speed.js?v=35"></script>
-  <script src="route-import.js?v=35"></script>
-  <script src="density-analysis.js?v=35"></script>
-  <script src="route-optimizer.js?v=35"></script>
-  <script src="app.js?v=35"></script>
+  <script src="map-engine.js?v=36"></script>
+  <script src="route-export.js?v=36"></script>
+  <script src="gps-speed.js?v=36"></script>
+  <script src="route-import.js?v=36"></script>
+  <script src="density-analysis.js?v=36"></script>
+  <script src="route-optimizer.js?v=36"></script>
+  <script src="dijkstra-routing.js?v=36"></script>
+  <script src="app.js?v=36"></script>
 </body>
 </html>
 
