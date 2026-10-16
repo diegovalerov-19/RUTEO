@@ -1,4 +1,4 @@
-# RUTEO
+# Metodo-Sakuray(SIG)
 
 Aplicación web progresiva para grabar recorridos con el GPS del celular y planificar rutas con un punto de partida, un punto final, fecha y hora programadas.
 
