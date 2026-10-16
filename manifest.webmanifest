@@ -1,6 +1,6 @@
 {
-  "name": "Ruteo - Captura de recorridos",
-  "short_name": "Ruteo",
+  "name": "Metodo-Sakuray(SIG)",
+  "short_name": "Sakuray SIG",
   "description": "Graba y planifica recorridos con el GPS de tu celular.",
   "start_url": "./",
   "scope": "./",
